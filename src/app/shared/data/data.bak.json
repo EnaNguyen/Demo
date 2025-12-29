@@ -1,0 +1,227 @@
+{
+  "owners": [
+    {
+      "_id": "owner_001",
+      "fullName": "Nguyễn Văn An",
+      "gender": "Nam",
+      "age": 45,
+      "birthday": "1980-05-15",
+      "idCard": "012345678901",
+      "businessLicense": "BL2021000456",
+      "address": "123 Lê Lợi, Quận 1, TP.HCM",
+      "businessType": "Khách sạn & Resort",
+      "taxCode": "0312345678",
+      "email": "an.nguyen@hotelowner.vn",
+      "phone": "0909123456",
+      "username": "owner_an",
+      "password": "$2b$12$zQ8examplehashedpassword1234567890",
+      "twoFactorEnabled": true,
+      "status": "active",
+      "createdAt": "2023-01-10T10:00:00Z"
+    },
+    {
+      "_id": "owner_002",
+      "fullName": "Trần Thị Lan",
+      "gender": "Nữ",
+      "age": 38,
+      "birthday": "1987-11-20",
+      "idCard": "098765432112",
+      "businessLicense": "BL2022000789",
+      "address": "45 Nguyễn Huệ, Nha Trang, Khánh Hòa",
+      "businessType": "Homestay & Motel",
+      "taxCode": "0319876543",
+      "email": "lantran@homestay.vn",
+      "phone": "0918234567",
+      "username": "owner_lan",
+      "password": "$2b$12$examplehashedpassword9876543210",
+      "twoFactorEnabled": false,
+      "status": "active",
+      "createdAt": "2023-03-15T08:30:00Z"
+    }
+  ],
+  "customers": [
+    {
+      "_id": "cust_001",
+      "fullName": "Lê Hoàng Minh",
+      "gender": "Nam",
+      "age": 29,
+      "birthday": "1996-08-10",
+      "idCard": "025678912345",
+      "email": "minh.le@gmail.com",
+      "phone": "0935123456",
+      "username": "minhle96",
+      "password": "$2b$12$customerhashed123456789",
+      "twoFactorEnabled": true,
+      "status": "active",
+      "createdAt": "2024-02-20T14:20:00Z"
+    },
+    {
+      "_id": "cust_002",
+      "fullName": "Phạm Ngọc Ánh",
+      "gender": "Nữ",
+      "age": 26,
+      "birthday": "1999-03-25",
+      "idCard": "027891234567",
+      "email": "anhpham99@yahoo.com",
+      "phone": "0978234567",
+      "username": "ngocanh99",
+      "password": "$2b$12$customerhashed987654321",
+      "twoFactorEnabled": false,
+      "status": "active",
+      "createdAt": "2024-05-10T09:15:00Z"
+    }
+  ],
+  "hotels": [
+    {
+      "_id": "hotel_001",
+      "ownerId": "owner_001",
+      "name": "Sunrise Resort & Spa Phú Quốc",
+      "slug": "sunrise-resort-spa-phu-quoc",
+      "address": "Bãi Dài, Gành Dầu, Phú Quốc, Kiên Giang",
+      "description": "Resort 5 sao ven biển với bãi biển riêng và hồ bơi vô cực.",
+      "businessTypes": ["resort", "hotel"],
+      "starRating": 5,
+      "totalRooms": 150,
+      "amenities": ["wifi", "pool", "spa", "restaurant", "parking", "beachfront"],
+      "checkInTime": "14:00",
+      "checkOutTime": "12:00",
+      "status": "active",
+      "images": [
+        "https://example.com/sunrise1.jpg",
+        "https://example.com/sunrise2.jpg"
+      ],
+      "createdAt": "2023-06-01T00:00:00Z"
+    },
+    {
+      "_id": "hotel_002",
+      "ownerId": "owner_002",
+      "name": "Nha Trang Motel & Homestay",
+      "slug": "nha-trang-motel-homestay",
+      "address": "12 Trần Phú, Nha Trang, Khánh Hòa",
+      "description": "Motel và homestay giá rẻ gần trung tâm và bãi biển.",
+      "businessTypes": ["motel", "homestay"],
+      "starRating": 2,
+      "totalRooms": 25,
+      "amenities": ["wifi", "parking", "air_conditioning"],
+      "checkInTime": "13:00",
+      "checkOutTime": "11:00",
+      "status": "active",
+      "images": ["https://example.com/ntmotel1.jpg"],
+      "createdAt": "2023-08-15T00:00:00Z"
+    }
+  ],
+  "roomTypes": [
+    {
+      "_id": "rt_001",
+      "hotelId": "hotel_001",
+      "name": "Deluxe Ocean View",
+      "slug": "deluxe-ocean-view",
+      "capacity": 2,
+      "bedType": "1 King Bed",
+      "size": 45,
+      "description": "Phòng nhìn ra biển, ban công riêng",
+      "amenities": ["wifi", "minibar", "safe", "bathtub", "balcony"],
+      "basePrice": 3500000,
+      "images": ["https://example.com/deluxe1.jpg"]
+    },
+    {
+      "_id": "rt_002",
+      "hotelId": "hotel_001",
+      "name": "Standard Double",
+      "slug": "standard-double",
+      "capacity": 2,
+      "bedType": "2 Single Beds",
+      "size": 28,
+      "description": "Phòng tiêu chuẩn không view",
+      "amenities": ["wifi", "air_conditioning", "tv"],
+      "basePrice": 1800000,
+      "images": ["https://example.com/standard1.jpg"]
+    },
+    {
+      "_id": "rt_003",
+      "hotelId": "hotel_002",
+      "name": "Phòng Đôi Tiêu Chuẩn",
+      "capacity": 2,
+      "bedType": "1 Double Bed",
+      "size": 20,
+      "basePrice": 450000,
+      "amenities": ["wifi", "air_conditioning", "fan"]
+    }
+  ],
+  "rooms": [
+    {
+      "_id": "room_101",
+      "hotelId": "hotel_001",
+      "roomTypeId": "rt_001",
+      "roomNumber": "101",
+      "floor": 1,
+      "status": "available"
+    },
+    {
+      "_id": "room_102",
+      "hotelId": "hotel_001",
+      "roomTypeId": "rt_001",
+      "roomNumber": "102",
+      "floor": 1,
+      "status": "available"
+    },
+    {
+      "_id": "room_201",
+      "hotelId": "hotel_001",
+      "roomTypeId": "rt_002",
+      "roomNumber": "201",
+      "floor": 2,
+      "status": "maintenance"
+    },
+    {
+      "_id": "room_m01",
+      "hotelId": "hotel_002",
+      "roomTypeId": "rt_003",
+      "roomNumber": "01",
+      "floor": 1,
+      "status": "available"
+    }
+  ],
+  "bookings": [
+    {
+      "_id": "booking_001",
+      "customerId": "cust_001",
+      "hotelId": "hotel_001",
+      "roomIds": ["room_101"],
+      "roomTypeId": "rt_001",
+      "checkIn": "2025-12-20",
+      "checkOut": "2025-12-25",
+      "adults": 2,
+      "children": 0,
+      "totalPrice": 17500000,
+      "status": "confirmed",
+      "paymentStatus": "paid",
+      "paymentMethod": "vnpay",
+      "specialRequests": "Cần thêm nôi em bé",
+      "createdAt": "2025-11-01T10:30:00Z"
+    }
+  ],
+  "reviews": [
+    {
+      "_id": "review_001",
+      "hotelId": "hotel_001",
+      "customerId": "cust_001",
+      "bookingId": "booking_001",
+      "rating": 5,
+      "comment": "Resort tuyệt vời, nhân viên thân thiện, view đẹp!",
+      "images": ["https://example.com/review1.jpg"],
+      "createdAt": "2025-12-26T14:00:00Z"
+    }
+  ],
+  "payments": [
+    {
+      "_id": "pay_001",
+      "bookingId": "booking_001",
+      "amount": 17500000,
+      "method": "vnpay",
+      "status": "success",
+      "transactionId": "vnp_TxnRef_123456789",
+      "paidAt": "2025-11-01T10:35:00Z"
+    }
+  ]
+}
