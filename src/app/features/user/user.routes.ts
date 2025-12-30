@@ -7,7 +7,7 @@ export const USER_ROUTES: Routes = [
   },
   {
     path: 'products',
-    loadComponent: () => import('./products/products').then(m => m.Products),
+    loadComponent: () => import('./products/products').then(m => m.ProductComponent),
   },
   {
     path: 'history',

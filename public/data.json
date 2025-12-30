@@ -1,0 +1,54 @@
+{
+  "products": [
+    {
+      "key": 1,
+      "properties": [
+        { "label": "name", "value": "Iphone13" },
+        { "label": "price", "value": 29990000 },
+        { "label": "releaseDate", "value": "2023-09-12" },
+        { "label": "brand", "value": "Apple" },
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+      ]
+    },
+    {
+      "key": 2,
+      "properties": [
+        { "label": "name", "value": "S23" },
+        { "label": "price", "value": 25990000 },
+        { "label": "releaseDate", "value": "2023-08-05" },
+        { "label": "brand", "value": "Samsung" },
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+      ]
+    },
+    {
+      "key": 3,
+      "properties": [
+        { "label": "name", "value": "Iphone12" },
+        { "label": "price", "value": 19990000 },
+        { "label": "releaseDate", "value": "2023-07-20" },
+        { "label": "brand", "value": "Apple" },
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+      ]
+    },
+    {
+      "key": 4,
+      "properties": [
+        { "label": "name", "value": "Iphone11" },
+        { "label": "price", "value": 14990000 },
+        { "label": "releaseDate", "value": "2023-06-15" },
+        { "label": "brand", "value": "Apple" },
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+      ]
+    },
+    {
+      "key": 5,
+      "properties": [
+        { "label": "name", "value": "S24" },
+        { "label": "price", "value": 12990000 },
+        { "label": "releaseDate", "value": "2023-05-10" },
+        { "label": "brand", "value": "Samsung" },
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+      ]
+    }
+  ]
+}
