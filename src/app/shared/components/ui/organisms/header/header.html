@@ -1,0 +1,78 @@
+<header class="user-layout__header">
+  <div class="header-container">
+    <div class="header__left" *ngIf="config.left">
+      <a [href]="config.left.url || '/'" class="logo-link">
+        <img 
+          *ngIf="config.left.imgSrc" 
+          [src]="config.left.imgSrc" 
+          alt="Logo" 
+          class="logo-img"
+        >
+        <span class="logo-title" *ngIf="config.left.title">
+          {{ config.left.title }}
+        </span>
+      </a>
+    </div>
+
+    <!-- Center: Menu Navigation -->
+    <nav class="header__center" *ngIf="config.center">
+      <ul class="menu">
+        <li *ngFor="let item of config.center.menu" class="menu__item">
+          <a [routerLink]="item.url" routerLinkActive="active" class="menu__link">
+            {{ item.title }}
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Right: Icons & Actions -->
+    <div class="header__right">
+      <div 
+        *ngFor="let group of config.right; let i = index" 
+        class="header-right__group"
+        [ngClass]="{ 'header-right__group--icons': group.icons, 'header-right__group--dropdown': group.dropdownList }"
+      >
+        <!-- Icons Group -->
+        <div *ngIf="group.icons" class="icons-group">
+          <a 
+            *ngFor="let icon of group.icons; trackBy: trackByUrl" 
+            [href]="icon.url"
+            [title]="icon.title"
+            class="icon-link"
+          >
+            <img 
+              *ngIf="icon.iconSrc" 
+              [src]="icon.iconSrc" 
+              [alt]="icon.title"
+              class="icon-img"
+            >
+            <span class="icon-title">{{ icon.title }}</span>
+          </a>
+        </div>
+
+        <!-- Dropdown Group -->
+        <div *ngIf="group.dropdownList" class="dropdown-group">
+          <button class="dropdown-trigger">
+            <span class="dropdown-icon">☰</span>
+          </button>
+          <ul class="dropdown-menu">
+            <li 
+              *ngFor="let item of group.dropdownList; trackBy: trackByUrl" 
+              class="dropdown__item"
+            >
+              <a [href]="item.url" class="dropdown__link">
+                <img 
+                  *ngIf="item.iconSrc" 
+                  [src]="item.iconSrc" 
+                  [alt]="item.title"
+                  class="dropdown__icon"
+                >
+                <span>{{ item.title }}</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

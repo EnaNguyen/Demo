@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { takeUntil, distinctUntilChanged, debounceTime } from 'rxjs/operators';
-import { Owner } from '../../type/owner';
+import { Owner } from '../../type/owner/owner';
 import { AccountContextService, ValidationResult } from '../contexts/accountContext';
 
 export interface OwnerChangeEvent {

@@ -1,0 +1,67 @@
+<footer class="footer">
+  <div class="footer-container">
+    <!-- Footer Info Section -->
+    <section class="footer__info" *ngIf="config.info">
+      <div class="info-block">
+        <h4 class="info-title">Thông tin liên hệ</h4>
+        <div class="info-content">
+          <p class="info-item" *ngIf="config.info.Name">
+            <span class="info-label">Cửa hàng:</span> {{ config.info.Name }}
+          </p>
+          <p class="info-item" *ngIf="config.info.Email">
+            <span class="info-label">Email:</span> 
+            <a [href]="'mailto:' + config.info.Email">{{ config.info.Email }}</a>
+          </p>
+          <p class="info-item" *ngIf="config.info.Phone">
+            <span class="info-label">Điện thoại:</span> 
+            <a [href]="'tel:' + config.info.Phone">{{ config.info.Phone }}</a>
+          </p>
+          <p class="info-item" *ngIf="config.info.Address">
+            <span class="info-label">Địa chỉ:</span> {{ config.info.Address }}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Links Columns -->
+    <section class="footer__links" *ngIf="config.titlesLinks && config.titlesLinks.length > 0">
+      <div class="links-column">
+        <h4 class="links-title">Danh mục</h4>
+        <ul class="links-list">
+          <li *ngFor="let link of config.titlesLinks; trackBy: trackByUrl" class="links-item">
+            <a [href]="link.url" class="links-link">{{ link.title }}</a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Footer Social Icons -->
+    <section class="footer__social" *ngIf="config.iconLinks && config.iconLinks.length > 0">
+      <div class="social-block">
+        <h4 class="social-title">Theo dõi chúng tôi</h4>
+        <div class="social-icons">
+          <a 
+            *ngFor="let icon of config.iconLinks; trackBy: trackByUrl"
+            [href]="icon.url"
+            [title]="icon.hoverText"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-icon"
+          >
+            <img 
+              *ngIf="icon.iconSrc"
+              [src]="icon.iconSrc" 
+              [alt]="icon.hoverText"
+              class="social-icon-img"
+            >
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer Bottom -->
+  <div class="footer__bottom">
+    <p class="footer-copyright">&copy; 2024 MyShop. All rights reserved.</p>
+  </div>
+</footer>
