@@ -7,7 +7,10 @@
         { "label": "price", "value": 29990000 },
         { "label": "releaseDate", "value": "2023-09-12" },
         { "label": "brand", "value": "Apple" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
+        { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
+        { "label": "quantity", "value": 10 },
+        { "label": "status", "value": 1 }
       ]
     },
     {
@@ -17,7 +20,10 @@
         { "label": "price", "value": 25990000 },
         { "label": "releaseDate", "value": "2023-08-05" },
         { "label": "brand", "value": "Samsung" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
+         { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
+        { "label": "quantity", "value": 10 },
+        { "label": "status", "value": 1 }
       ]
     },
     {
@@ -27,7 +33,10 @@
         { "label": "price", "value": 19990000 },
         { "label": "releaseDate", "value": "2023-07-20" },
         { "label": "brand", "value": "Apple" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
+         { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
+        { "label": "quantity", "value": 10 },
+        { "label": "status", "value": 1 }
       ]
     },
     {
@@ -37,7 +46,10 @@
         { "label": "price", "value": 14990000 },
         { "label": "releaseDate", "value": "2023-06-15" },
         { "label": "brand", "value": "Apple" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
+        { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
+        { "label": "quantity", "value": 10 },
+        { "label": "status", "value": 0}
       ]
     },
     {
@@ -47,7 +59,10 @@
         { "label": "price", "value": 12990000 },
         { "label": "releaseDate", "value": "2023-05-10" },
         { "label": "brand", "value": "Samsung" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" }
+        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
+         { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
+        { "label": "quantity", "value": 10 },
+        { "label": "status", "value": 0 }
       ]
     }
   ]

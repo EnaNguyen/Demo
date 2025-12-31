@@ -24,6 +24,7 @@ export interface FilterOption {
 export interface FilterRequest {
     type: string;
     value?: string | number | boolean | Array<string | number | boolean>;
+    selected?: string | number | boolean | Array<string | number | boolean>;
     range?: { min: number|Date; max: number |Date};
     page?: number;
     pageSize?: number;

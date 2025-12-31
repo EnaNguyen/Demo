@@ -6,11 +6,28 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { writeFileSync } from 'node:fs';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+app.use(express.json()); // Thêm middleware để parse JSON
+
+/**
+ * Handle PUT /data.json to update the file
+ */
+app.put('/data.json', (req, res) => {
+  const filePath = join(browserDistFolder, 'data.json');
+  try {
+    writeFileSync(filePath, JSON.stringify(req.body, null, 2));
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error writing to data.json:', error);
+    res.status(500).json({ error: 'Failed to update data.json' });
+  }
+});
 
 /**
  * Example Express Rest API endpoints can be defined here.

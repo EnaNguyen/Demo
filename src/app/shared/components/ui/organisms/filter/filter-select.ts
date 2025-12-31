@@ -79,10 +79,10 @@ export class FilterSelectComponent implements OnInit {
     const value = this.filterOption.request.value;
     if (Array.isArray(value)) {
       this.items = value;
-      this.selectedValue = value[0] || null;
-    } else {
-      this.selectedValue = value || null;
     }
+
+    const sel = this.filterOption.request.selected !== undefined ? this.filterOption.request.selected : (Array.isArray(value) ? value[0] : value);
+    this.selectedValue = sel || null;
   }
 
   onSelectChange(): void {

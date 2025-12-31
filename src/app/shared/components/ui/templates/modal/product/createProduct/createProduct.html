@@ -1,0 +1,180 @@
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()" role="presentation">
+  <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Thêm sản phẩm mới</h2>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+
+      <div class="modal-body">
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+          <div class="form-container">
+
+            <!-- Left Column -->
+            <div class="form-column">
+              <div class="form-group">
+                <label for="name">Tên sản phẩm <span class="required">*</span></label>
+                <input
+                  type="text"
+                  id="name"
+                  formControlName="name"
+                  placeholder="Nhập tên sản phẩm"
+                  [class.error]="productForm.get('name')?.invalid && productForm.get('name')?.touched">
+                <span class="error-message" *ngIf="productForm.get('name')?.invalid && productForm.get('name')?.touched">
+                  Tên sản phẩm là bắt buộc
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="brand">Thương hiệu <span class="required">*</span></label>
+                <input
+                  type="text"
+                  id="brand"
+                  formControlName="brand"
+                  placeholder="Nhập thương hiệu"
+                  [class.error]="productForm.get('brand')?.invalid && productForm.get('brand')?.touched">
+                <span class="error-message" *ngIf="productForm.get('brand')?.invalid && productForm.get('brand')?.touched">
+                  Thương hiệu là bắt buộc
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="price">Giá <span class="required">*</span></label>
+                <input
+                  type="number"
+                  id="price"
+                  formControlName="price"
+                  placeholder="Nhập giá sản phẩm"
+                  [class.error]="productForm.get('price')?.invalid && productForm.get('price')?.touched">
+                <span class="error-message" *ngIf="productForm.get('price')?.invalid && productForm.get('price')?.touched">
+                  Giá phải lớn hơn 0
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="quantity">Số lượng <span class="required">*</span></label>
+                <input
+                  type="number"
+                  id="quantity"
+                  formControlName="quantity"
+                  placeholder="Nhập số lượng"
+                  [class.error]="productForm.get('quantity')?.invalid && productForm.get('quantity')?.touched">
+                <span class="error-message" *ngIf="productForm.get('quantity')?.invalid && productForm.get('quantity')?.touched">
+                  Số lượng phải lớn hơn hoặc bằng 0
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label for="releaseDate">Ngày phát hành</label>
+                <input
+                  type="date"
+                  id="releaseDate"
+                  formControlName="releaseDate">
+              </div>
+
+              <div class="form-group">
+                <label for="status">Trạng thái</label>
+                <select id="status" formControlName="status">
+                  <option [value]="1">Hoạt động</option>
+                  <option [value]="0">Không hoạt động</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-column">
+              <div class="form-group">
+                <label>Loại hình ảnh</label>
+                <div class="image-type-selector">
+                  <div class="radio-option">
+                    <input
+                      type="radio"
+                      id="imageTypeUrl"
+                      name="imageType"
+                      value="url"
+                      [(ngModel)]="imageType"
+                      [ngModelOptions]="{standalone: true}"
+                      (change)="onImageTypeChange()">
+                    <label for="imageTypeUrl">URL</label>
+                  </div>
+                  <div class="radio-option">
+                    <input
+                      type="radio"
+                      id="imageTypeFile"
+                      name="imageType"
+                      value="file"
+                      [(ngModel)]="imageType"
+                      [ngModelOptions]="{standalone: true}"
+                      (change)="onImageTypeChange()">
+                    <label for="imageTypeFile">Local File</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" *ngIf="imageType === 'url'">
+                <label for="imageUrl">URL hình ảnh</label>
+                <input
+                  type="text"
+                  id="imageUrl"
+                  formControlName="imageUrl"
+                  placeholder="Nhập URL hình ảnh"
+                  (input)="onImageUrlChange()">
+              </div>
+
+              <div class="form-group" *ngIf="imageType === 'file'">
+                <div
+                  class="file-upload-area"
+                  [class.drag-over]="isDragOver"
+                  (click)="fileInput.click()"
+                  (dragover)="onDragOver($event)"
+                  (dragleave)="onDragLeave($event)"
+                  (drop)="onDrop($event)">
+                  <div class="upload-icon">📁</div>
+                  <div class="upload-text">Kéo thả file vào đây hoặc click để chọn</div>
+                  <div class="upload-hint">Hỗ trợ: JPG, PNG, GIF (Tối đa 5MB)</div>
+                  <input
+                    #fileInput
+                    type="file"
+                    class="file-input-hidden"
+                    accept="image/*"
+                    (change)="onFileSelected($event)">
+                </div>
+
+                <div class="selected-file" *ngIf="selectedFileName">
+                  <span class="file-name">{{ selectedFileName }}</span>
+                  <button type="button" class="remove-file" (click)="removeFile()">✕</button>
+                </div>
+              </div>
+
+              <div class="image-preview">
+                <img
+                  *ngIf="previewImageUrl"
+                  [src]="previewImageUrl"
+                  alt="Preview"
+                  onerror="this.style.display='none'"/>
+                <div class="no-image" *ngIf="!previewImageUrl">
+                  Chưa có hình ảnh
+                </div>
+              </div>
+            </div>
+
+            <div class="form-column full-width">
+              <div class="form-group">
+                <label for="description">Mô tả</label>
+                <textarea
+                  id="description"
+                  formControlName="description"
+                  rows="4"
+                  placeholder="Nhập mô tả sản phẩm"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Hủy</button>
+            <button type="submit" class="btn btn-primary" [disabled]="productForm.invalid">Thêm sản phẩm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

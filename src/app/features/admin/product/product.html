@@ -1,0 +1,148 @@
+<div class="admin-product-container">
+  <!-- Header -->
+  <div class="admin-header">
+    <h1>Quản Lý Sản Phẩm</h1>
+    <button class="btn-add-product" (click)="openCreateModal()">+ Thêm Sản Phẩm</button>
+  </div>
+
+  <!-- Filter Toggle & Filters -->
+  <div class="filter-section">
+    <button class="btn-toggle-filter" (click)="showFilter = !showFilter">
+      {{ showFilter ? '▼ Ẩn Bộ Lọc' : '▶ Hiện Bộ Lọc' }}
+    </button>
+
+    <div class="filters-wrapper" *ngIf="showFilter">
+      <ng-container *ngFor="let filterOption of filterConfig.request; let i = index">
+        <app-filter-wrapper
+          [filterOption]="filterOption"
+          (filterChange)="onFilterChange($event)"
+        ></app-filter-wrapper>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <span class="stat"
+      >Tổng: <strong>{{ totalItems }}</strong> sản phẩm</span
+    >
+    <span class="stat"
+      >Hiển thị: <strong>{{ displayedProducts.length }}</strong> / trang</span
+    >
+    <span class="stat"
+      >Trang: <strong>{{ currentPage }} / {{ totalPages }}</strong></span
+    >
+  </div>
+
+  <!-- Products Table -->
+  <div class="table-container">
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Ảnh</th>
+          <th>Tên Sản Phẩm</th>
+          <th>Thương Hiệu</th>
+          <th>Ngày Ra Mắt</th>
+          <th>Giá</th>
+          <th>Số Lượng</th>
+          <th>Tình Trạng</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let product of displayedProducts; let index = index"
+          [ngClass]="getStatusClass(product)"
+        >
+          <td class="col-id">{{ product.key }}</td>
+          <td class="col-image">
+            <img [attr.src]="getProductImage(product)" [alt]="product.label" class="product-image" />
+          </td>
+          <td class="col-name">{{ product.label }}</td>
+          <td class="col-brand">{{ getPropertyValue(product, 'brand') }}</td>
+          <td class="col-date">{{ formatDate(getPropertyValue(product, 'releaseDate')) }}</td>
+          <td class="col-price">{{ formatPrice(getPropertyValue(product, 'price')) }}</td>
+          <td class="col-quantity">
+            <span [ngClass]="'qty-' + (getProductQuantity(product) > 0 ? 'available' : 'empty')">
+              {{ getProductQuantity(product) }}
+            </span>
+          </td>
+          <td class="col-status">
+            <span [ngClass]="'badge-' + getProductStatus(product).toLowerCase().replace(' ', '-')">
+              {{ getProductStatus(product) }}
+            </span>
+          </td>
+          <td class="col-actions">
+            <div class="action-dropdown">
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="actionMenu"
+                (click)="$event.stopPropagation()"
+              >
+                <span class="menu-dots">⋮</span>
+              </button>
+
+              <mat-menu #actionMenu="matMenu" xPosition="before" overlapTrigger="false">
+                <button mat-menu-item class="menu-item edit" (click)="editProduct(product)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Sửa</span>
+                </button>
+
+                <button
+                  mat-menu-item
+                  class="menu-item toggle"
+                  (click)="toggleProductStatus(product)"
+                >
+                  <mat-icon>
+                    @if (statusCheck(getPropertyValue(product, 'status')) === 1) { pause_circle }
+                    @else { play_circle }
+                    </mat-icon
+                  >
+                  <span>
+                    @if (statusCheck(getPropertyValue(product, 'status')) === 1) { Ngừng Bán }
+                    @else { Mở Bán }
+                  </span
+                  >
+                </button>
+
+                <button mat-menu-item class="menu-item delete" (click)="deleteProduct(product)">
+                  <mat-icon>delete</mat-icon>
+                  <span>Xóa</span>
+                </button>
+              </mat-menu>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="displayedProducts.length === 0" class="no-data">
+      <p>Không có sản phẩm nào phù hợp với điều kiện tìm kiếm</p>
+    </div>
+  </div>
+  <div class="pagination-section">
+    <div class="pagination">
+      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1">
+        ← Trước
+      </button>
+
+      <span class="page-info"> Trang {{ currentPage }} / {{ totalPages }} </span>
+
+      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage >= totalPages">
+        Tiếp Theo →
+      </button>
+    </div>
+
+    <div class="page-size">
+      <label>Hiển thị:</label>
+      <select [(ngModel)]="pageSize" (change)="onPageSizeChange(pageSize)">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} sản phẩm</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<app-update-product #updateProductModal></app-update-product>
+
+<app-create-product #createProductModal></app-create-product>

@@ -16,7 +16,8 @@ import { FilterOption } from '../../../../type/filter/filter';
             type="checkbox" 
             [id]="'checkbox-' + item"
             [value]="item"
-            (change)="onCheckboxChange($event)"
+              [checked]="checkedValues.has(item)"
+              (change)="onCheckboxChange($event)"
           />
           <label [for]="'checkbox-' + item">{{ item }}</label>
         </div>
@@ -80,7 +81,11 @@ export class FilterCheckboxComponent implements OnInit {
     const value = this.filterOption.request.value;
     if (Array.isArray(value)) {
       this.items = value;
-      this.checkedValues = new Set(value);
+    }
+
+    const selected = this.filterOption.request.selected;
+    if (Array.isArray(selected)) {
+      this.checkedValues = new Set(selected);
     }
   }
 

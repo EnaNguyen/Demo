@@ -1,39 +1,60 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { Router, ActivatedRoute } from '@angular/router';
-import { combineLatest } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { combineLatest } from 'rxjs';
 import {
   FilterGroup,
   DataInput,
   DataObject,
   FilterOption,
 } from '../../../shared/type/filter/filter';
-import { onFilterSelect, parseUrlFilters, buildUrlFromFilters, applyUrlChanges } from '../../../shared/pipe/hooks/onFilterSelect';
+import {
+  onFilterSelect,
+  parseUrlFilters,
+  buildUrlFromFilters,
+  applyUrlChanges,
+} from '../../../shared/pipe/hooks/onFilterSelect';
 import { FilterWrapperComponent } from '../../../shared/components/ui/organisms/filter/filter-wrapper';
 import { ProductContext } from '../../../shared/pipe/contexts/productContext';
-
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { UpdateProductComponent } from '../../../shared/components/ui/templates/modal/product/updateProduct/updateProduct';
+import { CreateProductComponent } from '../../../shared/components/ui/templates/modal/product/createProduct/createProduct';
+import { ReactiveFormsModule } from '@angular/forms';
 @Component({
-  selector: 'app-product',
+  selector: 'app-admin-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, FilterWrapperComponent],
-  templateUrl: '../products/products.html',
-  styleUrls: ['../products/products.css'],
+  imports: [
+    CommonModule,
+    FormsModule,
+    HttpClientModule,
+    FilterWrapperComponent,
+    MatMenuModule,
+    MatButtonModule,
+    MatIconModule,
+    ReactiveFormsModule,
+    UpdateProductComponent,
+    CreateProductComponent
+  ],
+  templateUrl: './product.html',
+  styleUrls: ['./product.css'],
 })
 export class ProductComponent implements OnInit, OnDestroy {
   products: DataObject[] = [];
   filteredProducts: DataObject[] = [];
   displayedProducts: DataObject[] = [];
-  
+
   filterConfig: FilterGroup = {
     label: 'Product Filters',
     DataInput: { dataSource: [] },
-    request: []
+    request: [],
   };
-  
+
   filterResult: any = null;
   brands: string[] = [];
   priceRange: { min: number; max: number } = { min: 0, max: 0 };
@@ -46,8 +67,9 @@ export class ProductComponent implements OnInit, OnDestroy {
   totalPages: number = 0;
 
   showFilter: boolean = false;
-  
-  Math = Math;
+  dropdownOpenId: string | null = null;
+  @ViewChild(UpdateProductComponent) updateProductModal!: UpdateProductComponent;
+  @ViewChild(CreateProductComponent) createProductModal!: CreateProductComponent;
   private destroy$ = new Subject<void>();
   private isInitialLoad = true;
 
@@ -74,6 +96,15 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.showFilter = !this.showFilter;
   }
 
+  toggleDropdown(productId: string | number): void {
+    const id = String(productId);
+    this.dropdownOpenId = this.dropdownOpenId === id ? null : id;
+  }
+
+  closeDropdown(): void {
+    this.dropdownOpenId = null;
+  }
+
   onImageError(event: any): void {
     event.target.style.display = 'none';
     const placeholder = event.target.nextElementSibling;
@@ -83,11 +114,9 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   listenToUrlChanges(): void {
-    this.activatedRoute.queryParams
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((params) => {
-        this.applyFiltersFromUrl(params);
-      });
+    this.activatedRoute.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      this.applyFiltersFromUrl(params);
+    });
   }
 
   initializeFilters(): void {
@@ -113,7 +142,7 @@ export class ProductComponent implements OnInit, OnDestroy {
             type: 'checkbox',
             target: 'brand',
             request: {
-              type: 'string',          
+              type: 'string',
               value: this.brands,
               selected: []
             },
@@ -156,7 +185,7 @@ export class ProductComponent implements OnInit, OnDestroy {
     try {
 
       this.filterResult = onFilterSelect(this.filterConfig);
-      
+
       const filteredKeys = this.filterResult.results.key;
 
       this.filteredProducts = this.products.filter((p) =>
@@ -169,15 +198,23 @@ export class ProductComponent implements OnInit, OnDestroy {
       this.updateDisplayedProducts();
 
       if (!this.isInitialLoad) {
-        let queryParams = buildUrlFromFilters(this.filterConfig);
-        queryParams = this.cleanDefaultQueryParams(queryParams);
-        applyUrlChanges(queryParams, this.router, this.activatedRoute);
+        const queryParams = buildUrlFromFilters(this.filterConfig);
+        const cleanedParams = this.cleanDefaultQueryParams(queryParams);
+        applyUrlChanges(cleanedParams, this.router, this.activatedRoute);
       }
       this.isInitialLoad = false;
-      
     } catch (error) {
       console.error('Error applying filter:', error);
     }
+  }
+
+  applyFiltersFromUrl(params: any): void {
+    if (!this.filterConfig.request || this.filterConfig.request.length === 0) {
+      return;
+    }
+
+    parseUrlFilters(params, this.filterConfig);
+    this.applyFilter();
   }
 
   private cleanDefaultQueryParams(queryParams: any): any {
@@ -210,26 +247,13 @@ export class ProductComponent implements OnInit, OnDestroy {
     return queryParams;
   }
 
-  applyFiltersFromUrl(params: any): void {
-    if (!this.filterConfig.request || this.filterConfig.request.length === 0) {
-      return;
-    }
-
-    parseUrlFilters(params, this.filterConfig);
-    this.applyFilter();
-  }
-
   onFilterChange(event: any): void {
-    
-    const filterIndex = this.filterConfig.request.findIndex(
-      (f) => f.title === event.title
-    );
-    
+    const filterIndex = this.filterConfig.request.findIndex((f) => f.title === event.title);
+
     if (filterIndex !== -1) {
       if (event.type === 'range') {
         this.filterConfig.request[filterIndex].request.range = event.range;
       } else {
-        // For checkbox/select/radio use `selected` to store current selection(s)
         if (event.type === 'checkbox' || event.type === 'select' || event.type === 'radio') {
           this.filterConfig.request[filterIndex].request.selected = event.value;
         } else {
@@ -271,38 +295,25 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.calculateTotalPages();
     this.updateDisplayedProducts();
   }
-
+  statusCheck(status: string): number {
+    if (status === 'Available') {
+      return 1;
+    } else if (status === 'Unavailable') {
+      return 0;
+    } else {
+      return -1;
+    }
+  }
   getPropertyValue(product: DataObject, propertyLabel: string): any {
     const property = product.properties?.find((p) => p.label === propertyLabel);
     return property ? property.value : null;
   }
+
   formatPrice(price: number): string {
     return price.toLocaleString('vi-VN', {
       style: 'currency',
       currency: 'VND',
     });
-  }
-   getProductQuantity(product: DataObject): number {
-    const quantity = this.getPropertyValue(product, 'quantity');
-    return quantity ? Number(quantity) : 0;
-  }
-  getProductStatus(product: DataObject): string {
-    const quantity = this.getProductQuantity(product);
-    const status = this.getPropertyValue(product, 'status'); 
-    if (status == 1) {
-        if (quantity === 0) return 'Hết hàng';
-        if (quantity < 10) return 'Sắp hết';
-        return 'Còn hàng';
-      }
-    return 'Ngừng Kinh Doanh'
-  }
-  getStatusClass(product: DataObject): string {
-    const status = this.getProductStatus(product);
-    console.log(product +"SL"+ status)
-    if (status === 'Hết hàng') return 'status-out';
-    if (status === 'Sắp hết') return 'status-low';
-    if (status === 'Ngừng Kinh Doanh') return 'status-unvailable';
-    return 'status-available';
   }
 
   formatDate(dateString: string): string {
@@ -312,6 +323,57 @@ export class ProductComponent implements OnInit, OnDestroy {
       month: 'long',
       day: 'numeric',
     });
+  }
+  getProductImage(product: DataObject): string {
+    const imageUrl = this.getPropertyValue(product, 'imageUrl');
+    return imageUrl || '/assets/placeholder.png';
+  }
+
+  getProductQuantity(product: DataObject): number {
+    const quantity = this.getPropertyValue(product, 'quantity');
+    return quantity ? Number(quantity) : 0;
+  }
+
+  getProductStatus(product: DataObject): string {
+    const quantity = this.getProductQuantity(product);
+    const status = this.getPropertyValue(product, 'status');
+    if (status == 1) {
+        if (quantity === 0) return 'Hết hàng';
+        if (quantity < 10) return 'Sắp hết';
+        return 'Còn hàng';
+      }
+    return 'Ngừng Kinh Doanh'
+  }
+  getStatusClass(product: DataObject): string {
+    const status = this.getProductStatus(product);
+    if (status === 'Hết hàng') return 'status-out';
+    if (status === 'Sắp hết') return 'status-low';
+    if (status === 'Ngừng Kinh Doanh') return 'status-unvailable';
+    return 'status-available';
+  }
+
+  editProduct(product: DataObject): void {
+    if (this.updateProductModal) {
+      this.updateProductModal.editProduct(product as any);
+    }
+  }
+
+  openCreateModal(): void {
+    if (this.createProductModal) {
+      this.createProductModal.openModal();
+    }
+  }
+
+  toggleProductStatus(product: DataObject): void {
+    console.log('Toggle status for:', product);
+    alert(`Thay đổi tình trạng sản phẩm: ${product.label}`);
+    }
+
+  deleteProduct(product: DataObject): void {
+    if (confirm(`Bạn có chắc muốn xóa sản phẩm "${product.label}"?`)) {
+      console.log('Delete product:', product);
+      alert(`Đã xóa sản phẩm: ${product.label}`);
+    }
   }
 
   viewDetail(product: DataObject): void {
