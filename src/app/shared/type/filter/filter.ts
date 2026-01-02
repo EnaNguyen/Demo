@@ -9,7 +9,8 @@ export interface DataInput {
 export interface DataObject {
   key: string| number;
   label: string;
-  properties?: PropertiesObject[]; 
+  properties?: PropertiesObject[];
+  id?: string | number; 
 }
 export interface PropertiesObject{
   label: string;

@@ -1,69 +1,352 @@
 {
   "products": [
     {
-      "key": 1,
+      "id": "6153",
+      "key": "6153",
       "properties": [
-        { "label": "name", "value": "Iphone13" },
-        { "label": "price", "value": 29990000 },
-        { "label": "releaseDate", "value": "2023-09-12" },
-        { "label": "brand", "value": "Apple" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
-        { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
-        { "label": "quantity", "value": 10 },
-        { "label": "status", "value": 1 }
+        {
+          "label": "name",
+          "value": "Iphone13"
+        },
+        {
+          "label": "price",
+          "value": 29990000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2023-09-12"
+        },
+        {
+          "label": "brand",
+          "value": "Apple"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg"
+        },
+        {
+          "label": "description",
+          "value": "This is the latest iPhone model with advanced features and improved performance."
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 1
+        }
       ]
     },
     {
+      "id": "14d5",
       "key": 2,
       "properties": [
-        { "label": "name", "value": "S23" },
-        { "label": "price", "value": 25990000 },
-        { "label": "releaseDate", "value": "2023-08-05" },
-        { "label": "brand", "value": "Samsung" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
-         { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
-        { "label": "quantity", "value": 10 },
-        { "label": "status", "value": 1 }
+        {
+          "label": "name",
+          "value": "S23"
+        },
+        {
+          "label": "price",
+          "value": 25990000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2023-08-05"
+        },
+        {
+          "label": "brand",
+          "value": "Samsung"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg"
+        },
+        {
+          "label": "description",
+          "value": "This is the latest iPhone model with advanced features and improved performance."
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 0
+        }
       ]
     },
     {
+      "id": "d51e",
       "key": 3,
       "properties": [
-        { "label": "name", "value": "Iphone12" },
-        { "label": "price", "value": 19990000 },
-        { "label": "releaseDate", "value": "2023-07-20" },
-        { "label": "brand", "value": "Apple" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
-         { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
-        { "label": "quantity", "value": 10 },
-        { "label": "status", "value": 1 }
+        {
+          "label": "name",
+          "value": "Iphone12"
+        },
+        {
+          "label": "price",
+          "value": 19990000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2023-07-20"
+        },
+        {
+          "label": "brand",
+          "value": "Apple"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg"
+        },
+        {
+          "label": "description",
+          "value": "This is the latest iPhone model with advanced features and improved performance."
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 0
+        }
       ]
     },
     {
-      "key": 4,
+      "id": "ae8a",
+      "key": "ae8a",
       "properties": [
-        { "label": "name", "value": "Iphone11" },
-        { "label": "price", "value": 14990000 },
-        { "label": "releaseDate", "value": "2023-06-15" },
-        { "label": "brand", "value": "Apple" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
-        { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
-        { "label": "quantity", "value": 10 },
-        { "label": "status", "value": 0}
+        {
+          "label": "name",
+          "value": "Iphone11"
+        },
+        {
+          "label": "price",
+          "value": 14990000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2023-06-15"
+        },
+        {
+          "label": "brand",
+          "value": "Apple"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg"
+        },
+        {
+          "label": "description",
+          "value": "This is the latest iPhone model with advanced features and improved performance."
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 0
+        }
       ]
     },
     {
-      "key": 5,
+      "id": "6bf9",
+      "key": "6bf9",
       "properties": [
-        { "label": "name", "value": "S24" },
-        { "label": "price", "value": 12990000 },
-        { "label": "releaseDate", "value": "2023-05-10" },
-        { "label": "brand", "value": "Samsung" },
-        { "label": "imageUrl", "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg" },
-         { "label": "description", "value": "This is the latest iPhone model with advanced features and improved performance." },
-        { "label": "quantity", "value": 10 },
-        { "label": "status", "value": 0 }
+        {
+          "label": "name",
+          "value": "S25"
+        },
+        {
+          "label": "price",
+          "value": 12990000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2026-01-02"
+        },
+        {
+          "label": "brand",
+          "value": "Samsung"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://bluegiftvietnam.com/wp-content/uploads/2022/11/qua-tang-noel-cho-khach-hang-thumb.jpg"
+        },
+        {
+          "label": "description",
+          "value": ""
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 0
+        }
       ]
+    },
+    {
+      "id": "2f97",
+      "key": "2f97",
+      "properties": [
+        {
+          "label": "name",
+          "value": "A53"
+        },
+        {
+          "label": "price",
+          "value": 5000000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2026-01-02"
+        },
+        {
+          "label": "brand",
+          "value": "Samsung"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://ad.pantado.edu.vn/wp-content/uploads/2020/01/gift-va-present-4_1636424009.jpg"
+        },
+        {
+          "label": "description",
+          "value": ""
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "1767342779379",
+      "key": 1767342779379,
+      "properties": [
+        {
+          "label": "name",
+          "value": "000"
+        },
+        {
+          "label": "price",
+          "value": 10000000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2026-01-02"
+        },
+        {
+          "label": "brand",
+          "value": "Samsung"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://sosanhdienthoai.net/wp-content/uploads/2024/01/hinh-nen-8k-dep-cho-dien-thoai-36.jpg"
+        },
+        {
+          "label": "description",
+          "value": "1231312"
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": 1767343119458,
+      "key": 1767343119458,
+      "properties": [
+        {
+          "label": "name",
+          "value": "cccc"
+        },
+        {
+          "label": "price",
+          "value": 10000000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2026-01-02"
+        },
+        {
+          "label": "brand",
+          "value": "Samsung"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://ad.pantado.edu.vn/wp-content/uploads/2020/01/gift-va-present-4_1636424009.jpg"
+        },
+        {
+          "label": "description",
+          "value": "123"
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "username": "User1",
+      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "role": "customer"
+    },
+    {
+      "id": "2",
+      "name": "Admin User",
+      "email": "nguyenquangquyX@gmail.com",
+      "username": "Admin",
+      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "role": "admin"
+    },
+    {
+      "id": 1767346118243,
+      "name": "NQQ",
+      "username": "User2",
+      "email": "nguyenquangquyq@gmail.com",
+      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "role": "customer"
+    }
+  ],
+  "carts": [
+    {
+      "cartId": 1,
+      "userId": 1,
+      "totalPrice": 29990000,
+      "id": "4361"
+    }
+  ],
+  "cartItems": [
+    {
+      "detailId": 1,
+      "cartId": 1,
+      "productId": "6153",
+      "quantity": 1,
+      "price": 29990000,
+      "id": "f97d"
     }
   ]
 }

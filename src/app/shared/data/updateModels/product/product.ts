@@ -13,5 +13,6 @@ export interface updateProduct
     brand: string,
     quantity : number,
     status: number,
-    description?: string
+    description?: string,
+    releaseDate?: string
 }

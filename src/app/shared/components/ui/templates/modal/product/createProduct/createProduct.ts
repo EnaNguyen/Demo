@@ -107,11 +107,10 @@ export class CreateProductComponent {
   onSubmit(): void {
     if (this.productForm.valid) {
       const newProduct: updateProduct = {
-        id: Date.now(), 
         name: this.productForm.value.name,
         brand: this.productForm.value.brand,
         quantity: this.productForm.value.quantity,
-        status: this.productForm.value.status,
+        status: Number(this.productForm.value.status),
         price: this.productForm.value.price,
         imageUrl: this.imageType === 'url' ? this.productForm.value.imageUrl : undefined,
         imageLocate: this.imageType === 'file' ? this.selectedFileName : undefined,

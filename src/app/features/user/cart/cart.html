@@ -1,1 +1,61 @@
-<p>cart works!</p>
+<div class="cart-container">
+  <div class="cart-header">
+    <h1>🛒 Giỏ Hàng</h1>
+  </div>
+
+  <div class="cart-content" *ngIf="cart && cart.items && cart.items.length > 0; else emptyCart">
+    <div class="cart-left">
+      <div class="cart-items-section">
+        <h2>Chi Tiết Giỏ Hàng ({{ cart.items.length }} sản phẩm)</h2>
+        <div class="cart-items">
+          <div class="cart-item" *ngFor="let item of cart.items">
+            <div class="item-image" *ngIf="getProductById(item.productId)">
+              <img [src]="getPropertyValue(getProductById(item.productId)!, 'imageUrl')" [alt]="getProductById(item.productId)?.label" />
+            </div>
+            <div class="item-info">
+              <h3>{{ getProductById(item.productId)?.label }}</h3>
+              <p class="item-price">{{ formatPrice(item.price) }}</p>
+              <div class="quantity-control">
+                <button class="qty-btn" (click)="decreaseQuantity(item)">−</button>
+                <span class="qty-display">{{ item.quantity }}</span>
+                <button class="qty-btn" (click)="increaseQuantity(item)">+</button>
+              </div>
+            </div>
+            <div class="item-total">
+              <p class="total-price">{{ formatPrice(item.price * item.quantity) }}</p>
+              <button class="btn-remove" (click)="removeItem(item)">Xóa</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cart-right">
+      <div class="order-summary">
+        <h2>Tóm Tắt Đơn Hàng</h2>
+        <div class="summary-content">
+          <div class="summary-row">
+            <span>Số lượng:</span>
+            <span>{{ getTotalQuantity() }} sản phẩm</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row total">
+            <span>Tổng tiền:</span>
+            <span class="total-amount">{{ formatPrice(getTotalPrice()) }}</span>
+          </div>
+          <button class="checkout-btn" (click)="checkout()">Tiến Hành Thanh Toán</button>
+          <a routerLink="/products" class="btn-continue-shopping">Tiếp Tục Mua Sắm</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #emptyCart>
+    <div class="empty-cart-message">
+      <div class="empty-cart-icon">🛍️</div>
+      <h2>Giỏ hàng của bạn trống</h2>
+      <p>Hãy thêm một số sản phẩm để bắt đầu mua sắm!</p>
+      <a routerLink="/products" class="btn-start-shopping">Bắt Đầu Mua Sắm</a>
+    </div>
+  </ng-template>
+</div>

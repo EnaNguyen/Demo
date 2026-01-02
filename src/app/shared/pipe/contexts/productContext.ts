@@ -5,7 +5,6 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { DataObject } from '../../type/filter/filter';
 import { DataObjectUpdate, updateProduct } from '../../data/updateModels/product/product';
-import { saveAs } from 'file-saver';
 
 @Injectable({
   providedIn: 'root',
@@ -15,54 +14,50 @@ export class ProductContext {
   public products$ = this.productsSubject.asObservable();
 
   private readonly STORAGE_KEY = 'products';
+  private readonly API_URL = 'http://localhost:3000/products';
 
-  constructor(
-    private http: HttpClient,
-    @Inject(PLATFORM_ID) private platformId: Object
-  ) {
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
     this.loadProducts();
   }
 
   private loadProducts(): void {
-    // 1. Try to load from localStorage only in browser
-    if (isPlatformBrowser(this.platformId)) {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          this.setProductsFromRawData(data.products || []);
-          return;
-        } catch (e) {
-          console.error('Failed to parse products from localStorage', e);
-        }
-      }
-    }
-
-    // 2. Fallback: load from server / data.json
+    console.log('Loading products from:', this.API_URL);
     this.http
-      .get<{ products: any[] }>('/data.json')
-      .pipe(
-        map(data => {
-          // Save to localStorage only in browser
-          if (isPlatformBrowser(this.platformId)) {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-          }
-          return data.products || [];
-        })
-      )
+      .get<any[]>(this.API_URL)
       .subscribe({
-        next: (rawProducts) => this.setProductsFromRawData(rawProducts),
-        error: () => this.productsSubject.next([])
+        next: (products) => {
+          console.log('Products loaded successfully:', products);
+          this.setProductsFromRawData(products);
+        },
+        error: (error) => {
+          console.error('Error loading products from server:', error);
+          this.http
+            .get<{ products: any[] }>('/data.json')
+            .subscribe({
+              next: (data) => {
+                console.log('Fallback to data.json:', data.products);
+                this.setProductsFromRawData(data.products || []);
+              },
+              error: (fallbackError) => {
+                console.error('Fallback failed:', fallbackError);
+                this.productsSubject.next([]);
+              },
+            });
+        },
       });
   }
 
   private setProductsFromRawData(raw: any[]): void {
-    const products = raw.map(product => ({
-      key: product.key,
-      label: this.getPropertyValue(product.properties, 'name') || `Product ${product.key}`,
-      properties: product.properties || []
-    } as DataObject));
-
+    const products = raw.map(
+      (product) =>
+        ({
+          key: product.key,
+          id: product.id, 
+          label: this.getPropertyValue(product.properties, 'name') || `Product ${product.key}`,
+          properties: product.properties || [],
+        } as DataObject)
+    );
+ 
     this.productsSubject.next(products);
   }
 
@@ -132,109 +127,101 @@ export class ProductContext {
       })
     );
   }
-
-  // Helper method to save current state (call this after every change)
   private saveToStorage(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
     const current = this.productsSubject.getValue();
     const dataToStore = {
-      products: current.map(p => ({
+      products: current.map((p) => ({
         key: p.key,
-        properties: p.properties || []
-      }))
+        properties: p.properties || [],
+      })),
     };
 
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToStore));
   }
 
-  updateProducts(newProduct: updateProduct): void {
+  updateProducts(newProduct: updateProduct, serverId?: string | number): void {
     const currentProducts = this.productsSubject.getValue();
-
-    const updatedList: DataObjectUpdate[] = currentProducts.map((product) => {
-      if (product.key !== newProduct.id) {
-        return { key: product.key as number, properties: product.properties || [] }; // loại bỏ label và cast key
-      }
-      const oldProperties = product.properties || [];
-      const getOldValue = (label: string, defaultValue: any = '') => {
-        return oldProperties.find((p) => p.label === label)?.value ?? defaultValue;
-      };
-
-      return {
-        key: newProduct.id,
-        properties: [
-          { label: 'name', value: newProduct.name },
-          { label: 'brand', value: newProduct.brand },
-          { label: 'quantity', value: newProduct.quantity },
-          { label: 'status', value: newProduct.status },
-          {
-            label: 'imageUrl',
-            value: newProduct.imageUrl || newProduct.imageLocate || getOldValue('imageUrl'),
-          },
-          { label: 'releaseDate', value: getOldValue('releaseDate', '') },
-          { label: 'price', value: getOldValue('price', 0) },
-          { label: 'description', value: getOldValue('description', '') },
-        ],
-      };
-    });
-    const dataToStore = { products: updatedList };
-
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToStore));
+    let serverIdForUpdate = serverId;
+    if (!serverIdForUpdate && newProduct.id) {
+      const productToUpdateData = currentProducts.find(p => p.key === newProduct.id);
+      serverIdForUpdate = productToUpdateData?.id;
     }
 
-    this.productsSubject.next(
-      updatedList.map((item) => ({
-        key: item.key,
-        label: this.getPropertyValue(item.properties, 'name') || `Product ${item.key}`,
-        properties: item.properties,
-      }))
-    );
+    if (serverIdForUpdate) {
+      const currentProduct = currentProducts.find(p => p.id === serverIdForUpdate);
+      const currentReleaseDate = currentProduct?.properties?.find(p => p.label === 'releaseDate')?.value;
+      
+      const productToUpdate = this.buildProductPayload(
+        serverIdForUpdate,
+        newProduct,
+        currentReleaseDate
+      );
+      
+
+      
+      this.http.put(`${this.API_URL}/${serverIdForUpdate}`, productToUpdate).subscribe({
+        next: (response) => {
+
+        },
+        error: (error) => {
+          console.error(' Error:', error.status, error.message);
+          alert('Lỗi cập nhật: ' + (error.message || 'Unknown error'));
+        },
+      });
+    } else {
+      console.warn('Product not found');
+      alert('Không tìm thấy sản phẩm');
+    }
   }
 
   createProduct(newProduct: updateProduct): void {
-
-    const currentProducts = this.productsSubject.getValue();
-
-    const now = new Date();
-    const newProductData: DataObjectUpdate = {
+    const productPayload = {
       key: Date.now(),
       properties: [
         { label: 'name', value: newProduct.name },
-        { label: 'brand', value: newProduct.brand },
-        { label: 'quantity', value: newProduct.quantity },
-        { label: 'status', value: newProduct.status },
         { label: 'price', value: newProduct.price },
-        { label: 'imageUrl', value: newProduct.imageUrl || '' },
-        { label: 'releaseDate', value: now.toISOString().split('T')[0] },
+        { label: 'releaseDate', value: newProduct.releaseDate || new Date().toISOString().split('T')[0] },
+        { label: 'brand', value: newProduct.brand },
+        { label: 'imageUrl', value: newProduct.imageUrl || newProduct.imageLocate || '' },
         { label: 'description', value: newProduct.description || '' },
-      ]
+        { label: 'quantity', value: newProduct.quantity },
+        { label: 'status', value: newProduct.status !== undefined && newProduct.status !== null ? Number(newProduct.status) : 1 },
+      ],
     };
-
-    const updatedList = [newProductData, ...currentProducts.map(item => ({ key: item.key as number, properties: item.properties || [] }))];
-
-
-    const dataToStore = { products: updatedList };
-
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToStore));
-
-    }
-    const newProducts = updatedList.map(item => ({
-      key: item.key,
-      label: this.getPropertyValue(item.properties, 'name') || `Product ${item.key}`,
-      properties: item.properties
-    }));
-
-    this.productsSubject.next(newProducts);
-
-    this.http.post('/data.json', dataToStore).subscribe({
-      next: (response) => {
-        console.log('Product created on server');
+    
+    this.http.post(this.API_URL, productPayload).subscribe({
+      next: (response: any) => {
+        console.log('Product created on server successfully:', response);
+        setTimeout(() => {
+          this.loadProducts();
+        }, 500);
       },
       error: (error) => {
-        console.log('Server create failed, but local create succeeded');
-      }
+        console.error('Error creating product on server:', error);
+        alert('Lỗi tạo sản phẩm: ' + (error.message || 'Unknown error'));
+      },
     });
+  }
+
+  private buildProductPayload(id: number | string, product: updateProduct, releaseDate?: any): any {
+    const now = new Date();
+    const products = {
+      id: id,
+      key: id,
+      properties: [
+        { label: 'name', value: product.name },
+        { label: 'price', value: product.price },
+        { label: 'releaseDate', value: releaseDate || now.toISOString().split('T')[0] },
+        { label: 'brand', value: product.brand },
+        { label: 'imageUrl', value: product.imageUrl || product.imageLocate || '' },
+        { label: 'description', value: product.description || '' },
+        { label: 'quantity', value: product.quantity },
+        { label: 'status', value: product.status !== undefined && product.status !== null ? Number(product.status) : 1 },
+      ],
+    };
+    console.log(products);
+    return products;
   }
 }

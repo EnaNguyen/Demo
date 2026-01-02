@@ -181,10 +181,6 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   private cleanDefaultQueryParams(queryParams: any): any {
-    // Checkbox: already skipped if value.length === 0
-    // Search: already skipped if empty
-
-    // Range: remove if full range
     const priceParam = 'pricerange';
     if (queryParams[priceParam + 'Min'] == this.priceRange.min && queryParams[priceParam + 'Max'] == this.priceRange.max) {
       delete queryParams[priceParam + 'Min'];
@@ -198,8 +194,6 @@ export class ProductComponent implements OnInit, OnDestroy {
       delete queryParams[dateParam + 'Min'];
       delete queryParams[dateParam + 'Max'];
     }
-
-    // Page: remove if default (page=1, pageSize=5)
     if (queryParams['page'] == 1) {
       delete queryParams['page'];
     }
@@ -229,7 +223,6 @@ export class ProductComponent implements OnInit, OnDestroy {
       if (event.type === 'range') {
         this.filterConfig.request[filterIndex].request.range = event.range;
       } else {
-        // For checkbox/select/radio use `selected` to store current selection(s)
         if (event.type === 'checkbox' || event.type === 'select' || event.type === 'radio') {
           this.filterConfig.request[filterIndex].request.selected = event.value;
         } else {
@@ -298,7 +291,6 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
   getStatusClass(product: DataObject): string {
     const status = this.getProductStatus(product);
-    console.log(product +"SL"+ status)
     if (status === 'Hết hàng') return 'status-out';
     if (status === 'Sắp hết') return 'status-low';
     if (status === 'Ngừng Kinh Doanh') return 'status-unvailable';
@@ -315,6 +307,7 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   viewDetail(product: DataObject): void {
-    alert(`Chi tiết sản phẩm ${product.label}`);
+    console.log('Viewing details for product:', product);
+    this.router.navigate(['products', product.key]);
   }
 }

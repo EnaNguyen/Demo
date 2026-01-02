@@ -11,6 +11,7 @@ interface Property {
 
 interface DataObject {
   key: number;
+  id?: string | number; // JSON Server generated ID
   properties: Property[];
 }
 
@@ -25,6 +26,7 @@ export class UpdateProductComponent {
   isModalOpen = false;
   productForm!: FormGroup;
   currentProductKey: number | null = null;
+  currentProductServerId: string | number | undefined;
 
   constructor(
     private fb: FormBuilder,
@@ -106,6 +108,7 @@ export class UpdateProductComponent {
   }
   editProduct(product: DataObject): void {
     this.currentProductKey = product.key;
+    this.currentProductServerId = product.id; // Store the server ID
 
     const formData: any = {};
 
@@ -128,22 +131,23 @@ export class UpdateProductComponent {
     this.isModalOpen = false;
     this.productForm.reset();
     this.currentProductKey = null;
+    this.currentProductServerId = undefined;
   }
 
   onSubmit(): void {
     if (this.productForm.valid) {
         let updatedProduct:updateProduct = {
-            id: this.currentProductKey!,
+            id: this.currentProductServerId as number, 
             name: this.productForm.value.name,
             brand: this.productForm.value.brand,
             quantity: this.productForm.value.quantity,
-            status: this.productForm.value.status,
+            status: Number(this.productForm.value.status),
             price: this.productForm.value.price,
             imageUrl: this.imageType ==='url' ? this.productForm.value.imageUrl : undefined,
             imageLocate: this.imageType ==='file' ? this.selectedFileName : undefined
         };
         try{
-            this.productContext.updateProducts(updatedProduct);
+            this.productContext.updateProducts(updatedProduct, this.currentProductServerId);
             this.closeModal();
             console.log('Updated Product:', updatedProduct);
         }

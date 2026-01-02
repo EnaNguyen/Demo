@@ -9,8 +9,6 @@
       <div class="modal-body">
         <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
           <div class="form-container">
-
-            <!-- Left Column -->
             <div class="form-column">
               <div class="form-group">
                 <label for="name">Tên sản phẩm <span class="required">*</span></label>
@@ -75,8 +73,8 @@
               <div class="form-group">
                 <label for="status">Trạng thái</label>
                 <select id="status" formControlName="status">
-                  <option [value]="1">Hoạt động</option>
-                  <option [value]="0">Không hoạt động</option>
+                  <option [ngValue]="1">Hoạt động</option>
+                  <option [ngValue]="0">Không hoạt động</option>
                 </select>
               </div>
             </div>

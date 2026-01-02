@@ -26,6 +26,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { UpdateProductComponent } from '../../../shared/components/ui/templates/modal/product/updateProduct/updateProduct';
 import { CreateProductComponent } from '../../../shared/components/ui/templates/modal/product/createProduct/createProduct';
 import { ReactiveFormsModule } from '@angular/forms';
+import { DataObjectUpdate, updateProduct } from '../../../shared/data/updateModels/product/product';
+
 @Component({
   selector: 'app-admin-product',
   standalone: true,
@@ -39,7 +41,7 @@ import { ReactiveFormsModule } from '@angular/forms';
     MatIconModule,
     ReactiveFormsModule,
     UpdateProductComponent,
-    CreateProductComponent
+    CreateProductComponent,
   ],
   templateUrl: './product.html',
   styleUrls: ['./product.css'],
@@ -125,7 +127,7 @@ export class ProductComponent implements OnInit, OnDestroy {
     combineLatest([
       this.productContext.getUniqueBrands(),
       this.productContext.getPriceRange(),
-      this.productContext.getDateRange()
+      this.productContext.getDateRange(),
     ]).subscribe(([brands, priceRange, dateRange]) => {
       this.brands = brands;
       this.priceRange = priceRange;
@@ -144,7 +146,7 @@ export class ProductComponent implements OnInit, OnDestroy {
             request: {
               type: 'string',
               value: this.brands,
-              selected: []
+              selected: [],
             },
           },
           {
@@ -183,7 +185,6 @@ export class ProductComponent implements OnInit, OnDestroy {
 
   applyFilter(): void {
     try {
-
       this.filterResult = onFilterSelect(this.filterConfig);
 
       const filteredKeys = this.filterResult.results.key;
@@ -191,7 +192,6 @@ export class ProductComponent implements OnInit, OnDestroy {
       this.filteredProducts = this.products.filter((p) =>
         filteredKeys.includes(p.key as string | number)
       );
-
 
       this.totalItems = this.filteredProducts.length;
       this.calculateTotalPages();
@@ -218,12 +218,11 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   private cleanDefaultQueryParams(queryParams: any): any {
-    // Checkbox: already skipped if value.length === 0
-    // Search: already skipped if empty
-
-    // Range: remove if full range
     const priceParam = 'pricerange';
-    if (queryParams[priceParam + 'Min'] == this.priceRange.min && queryParams[priceParam + 'Max'] == this.priceRange.max) {
+    if (
+      queryParams[priceParam + 'Min'] == this.priceRange.min &&
+      queryParams[priceParam + 'Max'] == this.priceRange.max
+    ) {
       delete queryParams[priceParam + 'Min'];
       delete queryParams[priceParam + 'Max'];
     }
@@ -231,12 +230,14 @@ export class ProductComponent implements OnInit, OnDestroy {
     const dateParam = 'releasedate';
     const fullDateMin = this.dateRange.min.toISOString().split('T')[0];
     const fullDateMax = this.dateRange.max.toISOString().split('T')[0];
-    if (queryParams[dateParam + 'Min'] === fullDateMin && queryParams[dateParam + 'Max'] === fullDateMax) {
+    if (
+      queryParams[dateParam + 'Min'] === fullDateMin &&
+      queryParams[dateParam + 'Max'] === fullDateMax
+    ) {
       delete queryParams[dateParam + 'Min'];
       delete queryParams[dateParam + 'Max'];
     }
 
-    // Page: remove if default (page=1, pageSize=5)
     if (queryParams['page'] == 1) {
       delete queryParams['page'];
     }
@@ -295,15 +296,6 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.calculateTotalPages();
     this.updateDisplayedProducts();
   }
-  statusCheck(status: string): number {
-    if (status === 'Available') {
-      return 1;
-    } else if (status === 'Unavailable') {
-      return 0;
-    } else {
-      return -1;
-    }
-  }
   getPropertyValue(product: DataObject, propertyLabel: string): any {
     const property = product.properties?.find((p) => p.label === propertyLabel);
     return property ? property.value : null;
@@ -338,11 +330,11 @@ export class ProductComponent implements OnInit, OnDestroy {
     const quantity = this.getProductQuantity(product);
     const status = this.getPropertyValue(product, 'status');
     if (status == 1) {
-        if (quantity === 0) return 'Hết hàng';
-        if (quantity < 10) return 'Sắp hết';
-        return 'Còn hàng';
-      }
-    return 'Ngừng Kinh Doanh'
+      if (quantity === 0) return 'Hết hàng';
+      if (quantity < 10) return 'Sắp hết';
+      return 'Còn hàng';
+    }
+    return 'Ngừng Kinh Doanh';
   }
   getStatusClass(product: DataObject): string {
     const status = this.getProductStatus(product);
@@ -364,19 +356,31 @@ export class ProductComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleProductStatus(product: DataObject): void {
-    console.log('Toggle status for:', product);
-    alert(`Thay đổi tình trạng sản phẩm: ${product.label}`);
+  toggleProductStatus(products : DataObject): void {
+    const product = this.filteredProducts.find(p => p.id === products.id);
+    if (product) {
+      const currentStatus = Number(this.getPropertyValue(product, 'status'));
+      const newStatus = currentStatus == 1 ? 0 : 1;
+        
+      try {
+        const updatedProduct: updateProduct = {
+          id: product.id as number,
+          name: this.getPropertyValue(product, 'name'),
+          brand: this.getPropertyValue(product, 'brand'),
+          quantity: this.getProductQuantity(product),
+          status: newStatus as number,
+          price: this.getPropertyValue(product, 'price'),
+          imageUrl: this.getProductImage(product),
+          description: this.getPropertyValue(product, 'description'),
+        };
+        const statusProp = product.properties?.find(p => p.label === 'status');
+        if (statusProp) {
+          statusProp.value = newStatus;
+        }
+        this.productContext.updateProducts(updatedProduct, product.id);
+      } catch (error) {
+        console.error('❌ Error updating product status:', error);
+      }
     }
-
-  deleteProduct(product: DataObject): void {
-    if (confirm(`Bạn có chắc muốn xóa sản phẩm "${product.label}"?`)) {
-      console.log('Delete product:', product);
-      alert(`Đã xóa sản phẩm: ${product.label}`);
-    }
-  }
-
-  viewDetail(product: DataObject): void {
-    alert(`Chi tiết sản phẩm ${product.label}`);
   }
 }

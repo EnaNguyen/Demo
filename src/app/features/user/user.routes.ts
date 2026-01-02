@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { RoleGuard } from '../../shared/pipe/contexts/authorizeContext';
 
 export const USER_ROUTES: Routes = [
   {
@@ -7,7 +8,11 @@ export const USER_ROUTES: Routes = [
   },
   {
     path: 'products',
-    loadComponent: () => import('./products/products').then(m => m.ProductComponent),
+    loadComponent: () => import('./products/products').then(m => m.ProductComponent)
+  },
+  {
+    path: 'products/:id',
+    loadComponent: () => import('./products/detail/detail').then(m => m.Detail)
   },
   {
     path: 'history',
@@ -21,4 +26,10 @@ export const USER_ROUTES: Routes = [
     path: 'checkout',
     loadComponent: () => import('./checkout/checkout').then(m => m.Checkout)
   },
+];
+export const USER_LOGIN : Routes = [
+ {
+  path: 'login',
+  loadComponent: () => import('./login/login').then(m => m.Login)
+ }
 ];

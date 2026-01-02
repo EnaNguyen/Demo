@@ -57,7 +57,11 @@
         >
           <td class="col-id">{{ product.key }}</td>
           <td class="col-image">
-            <img [attr.src]="getProductImage(product)" [alt]="product.label" class="product-image" />
+            <img
+              [attr.src]="getProductImage(product)"
+              [alt]="product.label"
+              class="product-image"
+            />
           </td>
           <td class="col-name">{{ product.label }}</td>
           <td class="col-brand">{{ getPropertyValue(product, 'brand') }}</td>
@@ -95,20 +99,13 @@
                   (click)="toggleProductStatus(product)"
                 >
                   <mat-icon>
-                    @if (statusCheck(getPropertyValue(product, 'status')) === 1) { pause_circle }
+                    @if (getPropertyValue(product, 'status') == 1) { pause_circle }
                     @else { play_circle }
-                    </mat-icon
-                  >
+                  </mat-icon>
                   <span>
-                    @if (statusCheck(getPropertyValue(product, 'status')) === 1) { Ngừng Bán }
-                    @else { Mở Bán }
-                  </span
-                  >
-                </button>
-
-                <button mat-menu-item class="menu-item delete" (click)="deleteProduct(product)">
-                  <mat-icon>delete</mat-icon>
-                  <span>Xóa</span>
+                    @if (getPropertyValue(product, 'status') == 1) { Ngừng Bán } @else
+                    { Mở Bán }
+                  </span>
                 </button>
               </mat-menu>
             </div>

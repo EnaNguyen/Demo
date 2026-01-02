@@ -83,16 +83,14 @@
           <span class="info-value">{{ getPropertyValue(product, 'brand') }}</span>
         </div>
       </div>
-      <div class="product-footer">
-        >
+      <div class="product-footer">        
         <button
           class="btn-detail"
           (click)="viewDetail(product)"
-          [disabled]="getProductStatus(product) != 'Hết hàng' && getProductStatus(product)!= 'Ngừng Kinh Doanh'"
+          [disabled]="getPropertyValue(product, 'status') != 1"
           [ngClass]="getStatusClass(product)"
         >
-          @if (getProductStatus(product) !="Hết hàng" && getProductStatus(product)!="Ngừng Kinh Doanh") { Xem Chi Tiết }
-          @else if(getProductStatus(product) =="Hết hàng") { Hết hàng }
+          @if (getPropertyValue(product, 'status') == 1) { Xem Chi Tiết }
           @else { Ngừng Kinh Doanh }
         </button>
       </div>
