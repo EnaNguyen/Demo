@@ -158,7 +158,7 @@
       "properties": [
         {
           "label": "name",
-          "value": "S25"
+          "value": "S26"
         },
         {
           "label": "price",
@@ -267,7 +267,7 @@
       ]
     },
     {
-      "id": 1767343119458,
+      "id": "1767343119458",
       "key": 1767343119458,
       "properties": [
         {
@@ -303,6 +303,44 @@
           "value": 0
         }
       ]
+    },
+    {
+      "id": "ca94",
+      "key": 1767608763954,
+      "properties": [
+        {
+          "label": "name",
+          "value": "131231231"
+        },
+        {
+          "label": "price",
+          "value": 10000000
+        },
+        {
+          "label": "releaseDate",
+          "value": "2026-01-05"
+        },
+        {
+          "label": "brand",
+          "value": "Samsung"
+        },
+        {
+          "label": "imageUrl",
+          "value": "https://sosanhdienthoai.net/wp-content/uploads/2024/01/hinh-nen-8k-dep-cho-dien-thoai-36.jpg"
+        },
+        {
+          "label": "description",
+          "value": "dqwdqwdq"
+        },
+        {
+          "label": "quantity",
+          "value": 10
+        },
+        {
+          "label": "status",
+          "value": 1
+        }
+      ]
     }
   ],
   "users": [
@@ -323,7 +361,7 @@
       "role": "admin"
     },
     {
-      "id": 1767346118243,
+      "id": "1767346118243",
       "name": "NQQ",
       "username": "User2",
       "email": "nguyenquangquyq@gmail.com",
@@ -333,20 +371,32 @@
   ],
   "carts": [
     {
-      "cartId": 1,
+      "id": "4361",
+      "cartId": "4361",
       "userId": 1,
-      "totalPrice": 29990000,
-      "id": "4361"
+      "totalPrice": 119960000
+    },
+    {
+      "id": "9090",
+      "cartId": "9090",
+      "userId": 2,
+      "totalPrice": null
     }
   ],
   "cartItems": [
     {
-      "detailId": 1,
-      "cartId": 1,
+      "id": "f97d",
+      "detailId": "f97d",
+      "cartId": "4361",
       "productId": "6153",
-      "quantity": 1,
-      "price": 29990000,
-      "id": "f97d"
+      "quantity": 4,
+      "price": 29990000
+    },
+    {
+      "id": 1767609287795,
+      "cartId": "9090",
+      "productId": "6153",
+      "quantity": 1
     }
   ]
 }

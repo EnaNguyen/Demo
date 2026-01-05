@@ -1,4 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  inject,
+  computed,
+  effect,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -12,57 +21,71 @@ import {
   DataObject,
   FilterOption,
 } from '../../../shared/type/filter/filter';
-import { onFilterSelect, parseUrlFilters, buildUrlFromFilters, applyUrlChanges } from '../../../shared/pipe/hooks/onFilterSelect';
+import {
+  onFilterSelect,
+  parseUrlFilters,
+  buildUrlFromFilters,
+  applyUrlChanges,
+} from '../../../shared/pipe/hooks/onFilterSelect';
 import { FilterWrapperComponent } from '../../../shared/components/ui/organisms/filter/filter-wrapper';
-import { ProductContext } from '../../../shared/pipe/contexts/productContext';
-
+import { ProductStore } from '../../../shared/pipe/contexts/productContext';
+import { I18nService } from '../../../shared/services/i18n.service';
+import { TranslatePipe } from './../../../shared/pipe/translate/translate.pipe';
 @Component({
   selector: 'app-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, FilterWrapperComponent],
+  imports: [CommonModule, FormsModule, HttpClientModule, FilterWrapperComponent, TranslatePipe],
   templateUrl: '../products/products.html',
   styleUrls: ['../products/products.css'],
 })
 export class ProductComponent implements OnInit, OnDestroy {
-  products: DataObject[] = [];
-  filteredProducts: DataObject[] = [];
-  displayedProducts: DataObject[] = [];
-  
-  filterConfig: FilterGroup = {
-    label: 'Product Filters',
-    DataInput: { dataSource: [] },
-    request: []
-  };
-  
+  private productStore = inject(ProductStore);
+  products = this.productStore.products;
+  uniqueBrands = this.productStore.uniqueBrands;
+  priceRange = this.productStore.priceRange;
+  dateRange = this.productStore.dateRange;
+  filteredProducts = signal<DataObject[]>([]);
   filterResult: any = null;
   brands: string[] = [];
-  priceRange: { min: number; max: number } = { min: 0, max: 0 };
-  dateRange: { min: Date; max: Date } = { min: new Date(), max: new Date() };
-
-  currentPage: number = 1;
-  pageSize: number = 5;
+  currentPage = signal(1);
+  pageSize = signal(5);
   pageSizeOptions: number[] = [1, 5, 10, 20];
-  totalItems: number = 0;
-  totalPages: number = 0;
+  totalItems = computed(() => this.filteredProducts().length);
+  totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize()) || 1);
+  displayedProducts = computed(() => {
+    const startIndex = (this.currentPage() - 1) * this.pageSize();
+    const endIndex = startIndex + this.pageSize();
+    return this.filteredProducts().slice(startIndex, endIndex);
+  });
 
-  showFilter: boolean = false;
-  
+  filterConfig = signal<FilterGroup>({
+    label: 'Product Filters',
+    DataInput: { dataSource: [] },
+    request: [],
+  });
+
+  showFilter = signal(false);
+  dropdownOpenId = signal<string | null>(null);
   Math = Math;
   private destroy$ = new Subject<void>();
   private isInitialLoad = true;
+  private hasUrlParams = false;
 
-  constructor(
-    private productContext: ProductContext,
-    private router: Router,
-    private activatedRoute: ActivatedRoute
-  ) {}
+  constructor(private router: Router, private activatedRoute: ActivatedRoute) {
+    this.activatedRoute.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      this.hasUrlParams = Object.keys(params).length > 0;
+    });
+
+    effect(() => {
+      const products = this.products();
+      if (products.length > 0) {
+        this.initializeFilters(products);
+      }
+    });
+  }
 
   ngOnInit(): void {
-    this.productContext.products$.subscribe((products) => {
-      this.products = products;
-      this.initializeFilters();
-      this.listenToUrlChanges();
-    });
+    this.productStore.loadProducts();
   }
 
   ngOnDestroy(): void {
@@ -71,7 +94,7 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   toggleFilter(): void {
-    this.showFilter = !this.showFilter;
+    this.showFilter.update((show) => !show);
   }
 
   onImageError(event: any): void {
@@ -83,98 +106,73 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   listenToUrlChanges(): void {
-    this.activatedRoute.queryParams
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((params) => {
-        this.applyFiltersFromUrl(params);
-      });
-  }
-
-  initializeFilters(): void {
-    if (this.products.length === 0) return;
-
-    combineLatest([
-      this.productContext.getUniqueBrands(),
-      this.productContext.getPriceRange(),
-      this.productContext.getDateRange()
-    ]).subscribe(([brands, priceRange, dateRange]) => {
-      this.brands = brands;
-      this.priceRange = priceRange;
-      this.dateRange = dateRange;
-
-      this.filterConfig = {
-        label: 'Product Filters',
-        DataInput: {
-          dataSource: this.products,
-        },
-        request: [
-          {
-            title: 'Brand (Checkbox)',
-            type: 'checkbox',
-            target: 'brand',
-            request: {
-              type: 'string',          
-              value: this.brands,
-              selected: []
-            },
-          },
-          {
-            title: 'Price Range',
-            type: 'range',
-            target: 'price',
-            request: {
-              type: 'number',
-              range: { min: this.priceRange.min, max: this.priceRange.max },
-            },
-          },
-          {
-            title: 'Release Date',
-            type: 'range',
-            target: 'releaseDate',
-            request: {
-              type: 'date',
-              range: { min: this.dateRange.min, max: this.dateRange.max },
-            },
-          },
-          {
-            title: 'Search (Name)',
-            type: 'search',
-            target: 'name',
-            request: {
-              type: 'string',
-              value: '',
-            },
-          },
-        ],
-      };
-
-      this.applyFilter();
+    this.activatedRoute.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      this.applyFiltersFromUrl(params);
     });
   }
 
+  private initializeFilters(products: DataObject[]): void {
+    const brands = this.uniqueBrands();
+    const priceRange = this.priceRange();
+    const dateRange = this.dateRange();
+
+    const config: FilterGroup = {
+      label: 'Product Filters',
+      DataInput: { dataSource: products },
+      request: [
+        {
+          title: 'Brand (Checkbox)',
+          type: 'checkbox',
+          target: 'brand',
+          request: { type: 'string', value: brands, selected: [] },
+        },
+        {
+          title: 'Price Range',
+          type: 'range',
+          target: 'price',
+          request: { type: 'number', range: { min: priceRange.min, max: priceRange.max } },
+        },
+        {
+          title: 'Release Date',
+          type: 'range',
+          target: 'releaseDate',
+          request: { type: 'date', range: { min: dateRange.min, max: dateRange.max } },
+        },
+        {
+          title: 'Search (Name)',
+          type: 'search',
+          target: 'label', 
+          request: { type: 'string', value: '' },
+        },
+      ],
+    };
+
+    this.filterConfig.set(config);
+  
+    if (!this.hasUrlParams) {
+      this.applyFilter();
+    }
+  }
   applyFilter(): void {
+    const config = this.filterConfig();
     try {
+      const filterResult = onFilterSelect(config);
+      const filteredKeys = filterResult.results.key;
 
-      this.filterResult = onFilterSelect(this.filterConfig);
-      
-      const filteredKeys = this.filterResult.results.key;
-
-      this.filteredProducts = this.products.filter((p) =>
-        filteredKeys.includes(p.key as string | number)
+      this.filteredProducts.set(
+        this.products().filter((p) => filteredKeys.includes(p.key as string | number))
       );
-
-
-      this.totalItems = this.filteredProducts.length;
-      this.calculateTotalPages();
-      this.updateDisplayedProducts();
+      
+      this.currentPage.set(1);
 
       if (!this.isInitialLoad) {
-        let queryParams = buildUrlFromFilters(this.filterConfig);
-        queryParams = this.cleanDefaultQueryParams(queryParams);
-        applyUrlChanges(queryParams, this.router, this.activatedRoute);
+        const queryParams = buildUrlFromFilters(config);
+        queryParams['page'] = 1;
+        queryParams['pageSize'] = this.pageSize();
+        const cleanedParams = this.cleanDefaultQueryParams(queryParams);
+        applyUrlChanges(cleanedParams, this.router, this.activatedRoute);
       }
       this.isInitialLoad = false;
-      
     } catch (error) {
       console.error('Error applying filter:', error);
     }
@@ -182,15 +180,21 @@ export class ProductComponent implements OnInit, OnDestroy {
 
   private cleanDefaultQueryParams(queryParams: any): any {
     const priceParam = 'pricerange';
-    if (queryParams[priceParam + 'Min'] == this.priceRange.min && queryParams[priceParam + 'Max'] == this.priceRange.max) {
+    if (
+      queryParams[priceParam + 'Min'] == this.priceRange().min &&
+      queryParams[priceParam + 'Max'] == this.priceRange().max
+    ) {
       delete queryParams[priceParam + 'Min'];
       delete queryParams[priceParam + 'Max'];
     }
 
     const dateParam = 'releasedate';
-    const fullDateMin = this.dateRange.min.toISOString().split('T')[0];
-    const fullDateMax = this.dateRange.max.toISOString().split('T')[0];
-    if (queryParams[dateParam + 'Min'] === fullDateMin && queryParams[dateParam + 'Max'] === fullDateMax) {
+    const fullDateMin = this.dateRange().min.toISOString().split('T')[0];
+    const fullDateMax = this.dateRange().max.toISOString().split('T')[0];
+    if (
+      queryParams[dateParam + 'Min'] === fullDateMin &&
+      queryParams[dateParam + 'Max'] === fullDateMax
+    ) {
       delete queryParams[dateParam + 'Min'];
       delete queryParams[dateParam + 'Max'];
     }
@@ -205,64 +209,130 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   applyFiltersFromUrl(params: any): void {
-    if (!this.filterConfig.request || this.filterConfig.request.length === 0) {
+    if (!this.filterConfig().request || this.filterConfig().request.length === 0) {
       return;
     }
 
-    parseUrlFilters(params, this.filterConfig);
-    this.applyFilter();
-  }
+    this.filterConfig.update((currentConfig) => {
+      const newRequest = currentConfig.request.map((option) => {
+        const paramName = option.title.toLowerCase().replace(/\s+/g, '');
+        let newOption = { ...option };
+        let newReq = { ...option.request };
 
-  onFilterChange(event: any): void {
-    
-    const filterIndex = this.filterConfig.request.findIndex(
-      (f) => f.title === event.title
-    );
-    
-    if (filterIndex !== -1) {
-      if (event.type === 'range') {
-        this.filterConfig.request[filterIndex].request.range = event.range;
-      } else {
-        if (event.type === 'checkbox' || event.type === 'select' || event.type === 'radio') {
-          this.filterConfig.request[filterIndex].request.selected = event.value;
-        } else {
-          this.filterConfig.request[filterIndex].request.value = event.value;
+        try {
+          switch (option.type) {
+            case 'checkbox': {
+              const paramValue = params[paramName];
+              if (paramValue) {
+                const values = Array.isArray(paramValue)
+                  ? paramValue
+                  : paramValue.split(',').map((v: string) => {
+                      const num = Number(v);
+                      return isNaN(num) ? v.trim() : num;
+                    });
+                newReq.selected = values;
+              } else {
+                newReq.selected = [];
+              }
+              break;
+            }
+            case 'select':
+            case 'radio': {
+              const paramValue = params[paramName];
+              if (paramValue !== undefined) {
+                const num = Number(paramValue);
+                newReq.selected = isNaN(num) ? paramValue : num;
+              }
+              break;
+            }
+            case 'range': {
+              const minParam = paramName + 'Min';
+              const maxParam = paramName + 'Max';
+              const min = params[minParam];
+              const max = params[maxParam];
+
+              if (min !== undefined && max !== undefined) {
+                if (option.request.type === 'number') {
+                  newReq.range = { min: Number(min), max: Number(max) };
+                } else if (option.request.type === 'date') {
+                  newReq.range = { min: new Date(min), max: new Date(max) };
+                }
+              }
+              break;
+            }
+            case 'search': {
+              const paramValue = params[paramName];
+              if (paramValue) {
+                newReq.value = paramValue;
+              }
+              break;
+            }
+          }
+        } catch (error) {
+          console.error(`Error parsing filter '${option.title}':`, error);
         }
-      }
 
+        newOption.request = newReq;
+        return newOption;
+      });
+
+      return { ...currentConfig, request: newRequest };
+    });
+
+    const pageFromUrl = Number(params['page']) || 1;
+    const pageSizeFromUrl = Number(params['pageSize']) || 5;
+    
+    this.currentPage.set(pageFromUrl);
+    this.pageSize.set(pageSizeFromUrl);
+
+    const hasParams = Object.keys(params).length > 0;
+    if (hasParams) {
       this.applyFilter();
     }
   }
 
-  calculateTotalPages(): void {
-    this.totalPages = Math.ceil(this.totalItems / this.pageSize) || 1;
-  }
+  onFilterChange(event: any): void {
+    this.filterConfig.update((currentConfig) => {
+      const newRequest = [...currentConfig.request];
+      const filterIndex = newRequest.findIndex((f) => f.title === event.title);
 
-  updateDisplayedProducts(): void {
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    this.displayedProducts = this.filteredProducts.slice(startIndex, endIndex);
+      if (filterIndex === -1) return currentConfig;
+
+      const updatedFilter = { ...newRequest[filterIndex] };
+      const updatedRequest = { ...updatedFilter.request };
+
+      if (event.type === 'range') {
+        updatedRequest.range = event.range;
+      } else if (event.type === 'checkbox' || event.type === 'select' || event.type === 'radio') {
+        updatedRequest.selected = event.value;
+      } else {
+        updatedRequest.value = event.value;
+      }
+
+      updatedFilter.request = updatedRequest;
+      newRequest[filterIndex] = updatedFilter;
+
+      return { ...currentConfig, request: newRequest };
+    });
+
+    this.applyFilter();
   }
 
   previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.updateDisplayedProducts();
+    if (this.currentPage() > 1) {
+      this.currentPage.update((page) => page - 1);
     }
   }
 
   nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.updateDisplayedProducts();
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.update((page) => page + 1);
     }
   }
 
   onPageSizeChange(newPageSize: number): void {
-    this.pageSize = newPageSize;
-    this.currentPage = 1;
-    this.calculateTotalPages();
-    this.updateDisplayedProducts();
+    this.pageSize.set(newPageSize);
+    this.currentPage.set(1);
   }
 
   getPropertyValue(product: DataObject, propertyLabel: string): any {
@@ -275,19 +345,19 @@ export class ProductComponent implements OnInit, OnDestroy {
       currency: 'VND',
     });
   }
-   getProductQuantity(product: DataObject): number {
+  getProductQuantity(product: DataObject): number {
     const quantity = this.getPropertyValue(product, 'quantity');
     return quantity ? Number(quantity) : 0;
   }
   getProductStatus(product: DataObject): string {
     const quantity = this.getProductQuantity(product);
-    const status = this.getPropertyValue(product, 'status'); 
+    const status = this.getPropertyValue(product, 'status');
     if (status == 1) {
-        if (quantity === 0) return 'Hết hàng';
-        if (quantity < 10) return 'Sắp hết';
-        return 'Còn hàng';
-      }
-    return 'Ngừng Kinh Doanh'
+      if (quantity === 0) return 'Hết hàng';
+      if (quantity < 10) return 'Sắp hết';
+      return 'Còn hàng';
+    }
+    return 'Ngừng Kinh Doanh';
   }
   getStatusClass(product: DataObject): string {
     const status = this.getProductStatus(product);

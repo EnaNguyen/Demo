@@ -58,6 +58,16 @@
         </div>
       </div>
     </section>
+
+    <!-- Language Switcher -->
+    <section class="footer__language">
+      <div class="language-block">
+        <h4 class="language-title">Ngôn ngữ</h4>
+        <button class="language-btn" (click)="toggleLanguage()">
+          {{ currentLanguage() === 'en-US' ? '🌐 English' : '🌐 Tiếng Việt' }}
+        </button>
+      </div>
+    </section>
   </div>
 
   <!-- Footer Bottom -->

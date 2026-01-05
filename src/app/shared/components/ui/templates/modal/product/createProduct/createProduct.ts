@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { updateProduct } from '../../../../../../data/updateModels/product/product';
-import { ProductContext } from '../../../../../../pipe/contexts/productContext';
+import { ProductStore } from '../../../../../../pipe/contexts/productContext';
 
 @Component({
   standalone: true,
@@ -15,10 +15,10 @@ import { ProductContext } from '../../../../../../pipe/contexts/productContext';
 export class CreateProductComponent {
   isModalOpen = false;
   productForm!: FormGroup;
+  private productStore = inject(ProductStore);
 
   constructor(
-    private fb: FormBuilder,
-    private productContext: ProductContext
+    private fb: FormBuilder
   ) {
     this.initForm();
   }
@@ -117,7 +117,7 @@ export class CreateProductComponent {
         description: this.productForm.value.description || ''
       };
       try {
-        this.productContext.createProduct(newProduct);
+        this.productStore.createProduct(newProduct);
         this.closeModal();
         console.log('Created Product:', newProduct);
       } catch (error) {

@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { updateProduct } from '../../../../../../data/updateModels/product/product';
-import { ProductContext } from '../../../../../../pipe/contexts/productContext';
+import { ProductStore } from '../../../../../../pipe/contexts/productContext';
 interface Property {
   label: string;
   value: any;
@@ -11,7 +11,7 @@ interface Property {
 
 interface DataObject {
   key: number;
-  id?: string | number; // JSON Server generated ID
+  id?: string | number; 
   properties: Property[];
 }
 
@@ -27,10 +27,10 @@ export class UpdateProductComponent {
   productForm!: FormGroup;
   currentProductKey: number | null = null;
   currentProductServerId: string | number | undefined;
+  private productStore = inject(ProductStore);
 
   constructor(
-    private fb: FormBuilder,
-    private productContext: ProductContext 
+    private fb: FormBuilder
   ) {
     this.initForm();
   }
@@ -147,7 +147,7 @@ export class UpdateProductComponent {
             imageLocate: this.imageType ==='file' ? this.selectedFileName : undefined
         };
         try{
-            this.productContext.updateProducts(updatedProduct, this.currentProductServerId);
+            this.productStore.updateProduct({ serverId: this.currentProductServerId as string | number, update: updatedProduct });
             this.closeModal();
             console.log('Updated Product:', updatedProduct);
         }

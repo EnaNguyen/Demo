@@ -5,32 +5,32 @@
     <button class="btn-add-product" (click)="openCreateModal()">+ Thêm Sản Phẩm</button>
   </div>
 
-  <!-- Filter Toggle & Filters -->
+  <!-- Filter Section -->
   <div class="filter-section">
-    <button class="btn-toggle-filter" (click)="showFilter = !showFilter">
-      {{ showFilter ? '▼ Ẩn Bộ Lọc' : '▶ Hiện Bộ Lọc' }}
+    <button class="btn-toggle-filter" (click)="toggleFilter()">
+      {{ showFilter() ? 'Ẩn Bộ Lọc' : 'Hiện Bộ Lọc' }}
     </button>
 
-    <div class="filters-wrapper" *ngIf="showFilter">
-      <ng-container *ngFor="let filterOption of filterConfig.request; let i = index">
-        <app-filter-wrapper
-          [filterOption]="filterOption"
-          (filterChange)="onFilterChange($event)"
-        ></app-filter-wrapper>
-      </ng-container>
+    @if (showFilter()) {
+    <div class="filters-wrapper">
+      @for (filterOption of filterConfig().request; track filterOption.title) {
+      <app-filter-wrapper [filterOption]="filterOption" (filterChange)="onFilterChange($event)">
+      </app-filter-wrapper>
+      }
     </div>
+    }
   </div>
 
-  <!-- Stats -->
+  <!-- Stats Bar -->
   <div class="stats-bar">
     <span class="stat"
-      >Tổng: <strong>{{ totalItems }}</strong> sản phẩm</span
+      >Tổng: <strong>{{ totalItems() }}</strong> sản phẩm</span
     >
     <span class="stat"
-      >Hiển thị: <strong>{{ displayedProducts.length }}</strong> / trang</span
+      >Hiển thị: <strong>{{ displayedProducts().length }}</strong> / trang</span
     >
     <span class="stat"
-      >Trang: <strong>{{ currentPage }} / {{ totalPages }}</strong></span
+      >Trang: <strong>{{ currentPage() }} / {{ totalPages() }}</strong></span
     >
   </div>
 
@@ -51,22 +51,21 @@
         </tr>
       </thead>
       <tbody>
-        <tr
-          *ngFor="let product of displayedProducts; let index = index"
-          [ngClass]="getStatusClass(product)"
-        >
+        @for (product of displayedProducts(); track product.id ?? product.key) {
+        <tr [class]="getStatusClass(product)">
           <td class="col-id">{{ product.key }}</td>
           <td class="col-image">
             <img
-              [attr.src]="getProductImage(product)"
+              [src]="getProductImage(product)"
               [alt]="product.label"
               class="product-image"
+              (error)="onImageError($event)"
             />
           </td>
           <td class="col-name">{{ product.label }}</td>
           <td class="col-brand">{{ getPropertyValue(product, 'brand') }}</td>
-          <td class="col-date">{{ formatDate(getPropertyValue(product, 'releaseDate')) }}</td>
-          <td class="col-price">{{ formatPrice(getPropertyValue(product, 'price')) }}</td>
+          <td class="col-date">{{ getPropertyValue(product, 'releaseDate') | formatDate }}</td>
+          <td class="col-price">{{ getPropertyValue(product, 'price') | formatPrice }}</td>
           <td class="col-quantity">
             <span [ngClass]="'qty-' + (getProductQuantity(product) > 0 ? 'available' : 'empty')">
               {{ getProductQuantity(product) }}
@@ -99,47 +98,56 @@
                   (click)="toggleProductStatus(product)"
                 >
                   <mat-icon>
-                    @if (getPropertyValue(product, 'status') == 1) { pause_circle }
-                    @else { play_circle }
+                    @if (getPropertyValue(product, 'status') == 1) { pause_circle } @else {
+                    play_circle }
                   </mat-icon>
                   <span>
-                    @if (getPropertyValue(product, 'status') == 1) { Ngừng Bán } @else
-                    { Mở Bán }
+                    @if (getPropertyValue(product, 'status') == 1) { Ngừng Bán } @else { Mở Bán }
                   </span>
                 </button>
               </mat-menu>
             </div>
           </td>
         </tr>
+        } @empty {
+        <tr>
+          <td colspan="9" class="no-data">
+            <p>Không có sản phẩm nào phù hợp với điều kiện tìm kiếm</p>
+          </td>
+        </tr>
+        }
       </tbody>
     </table>
-
-    <div *ngIf="displayedProducts.length === 0" class="no-data">
-      <p>Không có sản phẩm nào phù hợp với điều kiện tìm kiếm</p>
-    </div>
   </div>
+
+  <!-- Pagination -->
   <div class="pagination-section">
     <div class="pagination">
-      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage === 1">
+      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage() === 1">
         ← Trước
       </button>
 
-      <span class="page-info"> Trang {{ currentPage }} / {{ totalPages }} </span>
+      <span class="page-info"> Trang {{ currentPage() }} / {{ totalPages() }} </span>
 
-      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage >= totalPages">
+      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage() >= totalPages()">
         Tiếp Theo →
       </button>
     </div>
 
     <div class="page-size">
       <label>Hiển thị:</label>
-      <select [(ngModel)]="pageSize" (change)="onPageSizeChange(pageSize)">
-        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} sản phẩm</option>
+      <select
+        [value]="pageSize()"
+        (change)="onPageSizeChange($any($event.target).value)"
+        class="page-size-select"
+      >
+        @for (size of pageSizeOptions; track size) {
+        <option [value]="size">{{ size }} sản phẩm</option>
+        }
       </select>
     </div>
   </div>
 </div>
 
 <app-update-product #updateProductModal></app-update-product>
-
 <app-create-product #createProductModal></app-create-product>

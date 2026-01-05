@@ -1,0 +1,11 @@
+{
+    "userProduct": {
+        "title": "Products",
+        "detail": "View Details",
+        "paused": "Stop Selling"
+    },
+    "language": {
+        "toggle": "Tiếng Việt",
+        "current": "English"
+    }
+}

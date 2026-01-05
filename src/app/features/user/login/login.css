@@ -21,9 +21,8 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1024px) {
-  .lg\:w-\[45\%] {
+  .lg\:w-\45\% {
     width: 100%;
   }
 }

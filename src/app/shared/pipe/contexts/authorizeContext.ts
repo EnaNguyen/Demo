@@ -1,3 +1,5 @@
+import { signalStore, withState, withMethods, patchState, withHooks, withComputed } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -6,6 +8,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { LoginUserInput, RegisterUserInput } from '../../type/users/user';
 import * as CryptoJS from 'crypto-js';
+import { sign } from 'node:crypto';
 @Injectable({
   providedIn: 'root',
 })
@@ -268,10 +271,6 @@ export class AuthorizeContext {
       console.log('All tokens cleared');
     }
   }
-
-  /**
-   * Kiểm tra xem có refreshToken trong localStorage không
-   */
   hasRefreshToken(): boolean {
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return false;
@@ -279,10 +278,6 @@ export class AuthorizeContext {
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
     return !!refreshToken;
   }
-
-  /**
-   * Lấy role của user từ localStorage
-   */
   getUserRole(): string | null {
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return null;
@@ -358,8 +353,6 @@ export class RoleGuard implements CanActivate {
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): boolean {
-    // Nếu là server-side rendering, cho phép pass qua
-    // Client-side sẽ kiểm tra lại
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return true;
     }
@@ -386,8 +379,6 @@ export class RoleGuard implements CanActivate {
       }
       return true;
     }
-
-    // Cho các route khác (cart, checkout...), kiểm tra authentication
     if (!this.authorizeContext.isAuthenticated()) {
       console.warn('User not authenticated. Redirecting to login...');
       alert('Vui lòng đăng nhập để truy cập trang này!');
@@ -398,3 +389,4 @@ export class RoleGuard implements CanActivate {
     return true;
   }
 }
+

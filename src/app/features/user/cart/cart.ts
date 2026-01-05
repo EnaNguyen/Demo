@@ -1,46 +1,42 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CartContext } from '../../../shared/pipe/contexts/cartContext';
-import { ProductContext } from '../../../shared/pipe/contexts/productContext';
+import { CartStore } from '../../../shared/pipe/contexts/cartContext';
+import { ProductStore } from '../../../shared/pipe/contexts/productContext';
 import { CartPersonalView, CartDetailPersonalView } from '../../../shared/data/viewModels/cartPersonalView';
 import { DataObject } from '../../../shared/type/filter/filter';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { FormatPricePipe } from '../../../shared/pipe/format/formatPrice.pipe';
 
 @Component({
   selector: 'app-cart',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormatPricePipe],
   templateUrl: './cart.html',
   styleUrl: './cart.css',
 })
-export class Cart implements OnInit, OnDestroy {
-  cart: CartPersonalView | null = null;
-  products: DataObject[] = [];
-  private destroy$ = new Subject<void>();
+export class Cart implements OnInit {
+  cart = signal<CartPersonalView | null>(null);
+  products = signal<DataObject[]>([]);
+  private productStore = inject(ProductStore);
+  private cartStore = inject(CartStore);
 
-  constructor(
-    private cartContext: CartContext,
-    private productContext: ProductContext
-  ) {}
-
-  ngOnInit(): void {
-    this.cartContext.cart$.pipe(takeUntil(this.destroy$)).subscribe(cart => {
-      this.cart = cart;
+  constructor() {
+    effect(() => {
+      const storeProducts = this.productStore.products();
+      this.products.set(storeProducts);
     });
 
-    this.productContext.products$.pipe(takeUntil(this.destroy$)).subscribe(products => {
-      this.products = products;
+    effect(() => {
+      const cartView = (this.cartStore as any)['cartView']();
+      this.cart.set(cartView);
     });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  ngOnInit(): void {
+    this.productStore.loadProducts();
   }
 
   getProductById(productId: number): DataObject | undefined {
-    return this.products.find(p => p.key == productId);
+    return this.products().find(p => p.key == productId);
   }
 
   getPropertyValue(product: DataObject, label: string): any {
@@ -48,34 +44,32 @@ export class Cart implements OnInit, OnDestroy {
   }
 
   getTotalPrice(): number {
-    return this.cart?.totalPrice || 0;
+    const cartValue = this.cart();
+    return cartValue?.totalPrice || 0;
   }
 
   getTotalQuantity(): number {
-    return this.cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+    const cartValue = this.cart();
+    return cartValue?.items?.reduce((sum: number, item: CartDetailPersonalView) => sum + item.quantity, 0) || 0;
   }
 
   increaseQuantity(item: CartDetailPersonalView): void {
     const product = this.getProductById(item.productId);
     if (product) {
       const maxQuantity = this.getPropertyValue(product, 'quantity');
-      this.cartContext.increaseQuantity(item, maxQuantity);
+      const storeTyped = this.cartStore as any;
+      storeTyped.increaseQuantity(item.id, maxQuantity);
     }
   }
 
   decreaseQuantity(item: CartDetailPersonalView): void {
-    this.cartContext.decreaseQuantity(item);
+    const storeTyped = this.cartStore as any;
+    storeTyped.decreaseQuantity(item.id);
   }
 
   removeItem(item: CartDetailPersonalView): void {
-    this.cartContext.removeItem(item);
-  }
-
-  formatPrice(price: number): string {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+    const storeTyped = this.cartStore as any;
+    storeTyped.removeItem(item.id);
   }
 
   checkout(): void {

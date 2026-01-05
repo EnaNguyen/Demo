@@ -3,18 +3,19 @@
     <h1>🛒 Giỏ Hàng</h1>
   </div>
 
-  <div class="cart-content" *ngIf="cart && cart.items && cart.items.length > 0; else emptyCart">
-    <div class="cart-left">
-      <div class="cart-items-section">
-        <h2>Chi Tiết Giỏ Hàng ({{ cart.items.length }} sản phẩm)</h2>
-        <div class="cart-items">
-          <div class="cart-item" *ngFor="let item of cart.items">
+  <ng-container *ngIf="cart() as cartData">
+    <div class="cart-content" *ngIf="cartData.items && cartData.items.length > 0; else emptyCart">
+      <div class="cart-left">
+        <div class="cart-items-section">
+          <h2>Chi Tiết Giỏ Hàng ({{ cartData.items.length }} sản phẩm)</h2>
+          <div class="cart-items">
+            <div class="cart-item" *ngFor="let item of cartData.items">
             <div class="item-image" *ngIf="getProductById(item.productId)">
               <img [src]="getPropertyValue(getProductById(item.productId)!, 'imageUrl')" [alt]="getProductById(item.productId)?.label" />
             </div>
             <div class="item-info">
               <h3>{{ getProductById(item.productId)?.label }}</h3>
-              <p class="item-price">{{ formatPrice(item.price) }}</p>
+              <p class="item-price">{{ item.price | formatPrice }}</p>
               <div class="quantity-control">
                 <button class="qty-btn" (click)="decreaseQuantity(item)">−</button>
                 <span class="qty-display">{{ item.quantity }}</span>
@@ -22,7 +23,7 @@
               </div>
             </div>
             <div class="item-total">
-              <p class="total-price">{{ formatPrice(item.price * item.quantity) }}</p>
+              <p class="total-price">{{ (item.price * item.quantity) | formatPrice }}</p>
               <button class="btn-remove" (click)="removeItem(item)">Xóa</button>
             </div>
           </div>
@@ -41,7 +42,7 @@
           <div class="summary-divider"></div>
           <div class="summary-row total">
             <span>Tổng tiền:</span>
-            <span class="total-amount">{{ formatPrice(getTotalPrice()) }}</span>
+            <span class="total-amount">{{ getTotalPrice() | formatPrice }}</span>
           </div>
           <button class="checkout-btn" (click)="checkout()">Tiến Hành Thanh Toán</button>
           <a routerLink="/products" class="btn-continue-shopping">Tiếp Tục Mua Sắm</a>
@@ -49,6 +50,7 @@
       </div>
     </div>
   </div>
+  </ng-container>
 
   <ng-template #emptyCart>
     <div class="empty-cart-message">

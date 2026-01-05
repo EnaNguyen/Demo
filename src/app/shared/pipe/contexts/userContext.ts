@@ -3,7 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { userInfoView } from '../../data/viewModels/userView';
-
+import { AuthorizeContext } from '../contexts/authorizeContext';
 @Injectable({
   providedIn: 'root',
 })
@@ -12,9 +12,10 @@ export class UserContext {
   private currentUserId = 1;
   private userSubject = new BehaviorSubject<userInfoView | null>(null);
   public user$: Observable<userInfoView | null> = this.userSubject.asObservable();
-
+  private readonly API_URL = 'http://localhost:3000/users';
   constructor(
     private http: HttpClient,
+    private authorizeContext: AuthorizeContext,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.loadUser();
@@ -35,7 +36,7 @@ export class UserContext {
       }
     }
 
-    this.http.get<any>('/data.json').subscribe({
+    this.http.get<any>(this.API_URL).subscribe({
       next: (data) => {
         const users = data.users || [];
         const user = users.find((u: any) => u.id === this.currentUserId);
@@ -58,9 +59,5 @@ export class UserContext {
         this.userSubject.next(null);
       },
     });
-  }
-
-  getCurrentUser(): userInfoView | null {
-    return this.userSubject.value;
   }
 }

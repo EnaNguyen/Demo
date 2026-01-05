@@ -5,7 +5,7 @@ export interface CartPersonalView {
   userId: number;
 }
 export interface CartDetailPersonalView {
-  id?: number;
+  id: number;
   cartId: number;
   productId: number;
   quantity: number;

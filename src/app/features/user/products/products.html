@@ -1,64 +1,56 @@
 <div class="container">
+  <!-- Page Header -->
   <div class="page-header">
-    <h1 style="font-size: 2rem; height: 70px; padding: 30px 10px 10px 10px">
-      🛒 Danh Sách Sản Phẩm
-    </h1>
+    <h1 style="font-size: 2rem; height: 70px; padding: 30px 10px 10px 10px">Danh Sách Sản Phẩm</h1>
     <button class="filter-toggle-btn" (click)="toggleFilter()">
-      <span>{{ showFilter ? 'Ẩn Bộ Lọc' : 'Hiển Thị Bộ Lọc' }}</span>
+      <span>{{ showFilter() ? 'Ẩn Bộ Lọc' : 'Hiển Thị Bộ Lọc' }}</span>
     </button>
   </div>
 
-  <div class="filter-section" [class.show]="showFilter">
+  <!-- Filter Section -->
+  @if (showFilter()) {
+  <div class="filter-section show">
     <h2>Bộ Lọc</h2>
     <div class="filters-container">
-      <ng-container *ngFor="let filter of filterConfig.request; let i = index">
-        <app-filter-wrapper
-          *ngIf="filter.type !== 'page'"
-          [filterOption]="filter"
-          (filterChange)="onFilterChange($event)"
-        ></app-filter-wrapper>
-      </ng-container>
+      @for (filter of filterConfig().request; track filter.title) { @if (filter.type !== 'page') {
+      <app-filter-wrapper [filterOption]="filter" (filterChange)="onFilterChange($event)">
+      </app-filter-wrapper>
+      } }
     </div>
   </div>
+  }
 
+  <!-- Pagination Info Top -->
   <div class="pagination-section">
     <div class="pagination-info">
-      <span
-        >Hiển thị <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong> -
-        <strong>{{ Math.min(currentPage * pageSize, totalItems) }}</strong> trong tổng
-        <strong>{{ totalItems }}</strong> sản phẩm</span
-      >
-    </div>
-
-    <div class="pagination-controls">
-      <div class="pagination-buttons">
-        <button (click)="previousPage()" [disabled]="currentPage <= 1" class="pagination-btn">
-          ← Trước
-        </button>
-        <span class="page-indicator">Trang {{ currentPage }} / {{ totalPages }}</span>
-        <button (click)="nextPage()" [disabled]="currentPage >= totalPages" class="pagination-btn">
-          Sau →
-        </button>
-      </div>
+      <span>
+        Hiển thị
+        <strong>{{ (currentPage() - 1) * pageSize() + 1 }}</strong> -
+        <strong>{{ Math.min(currentPage() * pageSize(), totalItems()) }}</strong>
+        trong tổng <strong>{{ totalItems() }}</strong> sản phẩm
+      </span>
     </div>
   </div>
+
+  <!-- Product Grid -->
   <div class="product-container">
-    <div *ngIf="displayedProducts.length === 0" class="no-products">
+    @if (displayedProducts().length === 0) {
+    <div class="no-products">
       <p>Không tìm thấy sản phẩm phù hợp với bộ lọc</p>
     </div>
-
-    <div class="product-card" *ngFor="let product of displayedProducts">
+    } @for (product of displayedProducts(); track product.key ?? product.id) {
+    <div class="product-card">
       <div class="product-image-container">
+        @if (getPropertyValue(product, 'imageUrl')) {
         <img
-          *ngIf="getPropertyValue(product, 'imageUrl')"
           [src]="getPropertyValue(product, 'imageUrl')"
           [alt]="product.label"
           class="product-image"
           (error)="onImageError($event)"
         />
-        <div *ngIf="!getPropertyValue(product, 'imageUrl')" class="product-image-placeholder">
-          📦
-        </div>
+        } @else {
+        <div class="product-image-placeholder">No Image</div>
+        }
       </div>
 
       <div class="product-header">
@@ -83,18 +75,23 @@
           <span class="info-value">{{ getPropertyValue(product, 'brand') }}</span>
         </div>
       </div>
-      <div class="product-footer">        
+
+      <div class="product-footer">
         <button
           class="btn-detail"
           (click)="viewDetail(product)"
           [disabled]="getPropertyValue(product, 'status') != 1"
-          [ngClass]="getStatusClass(product)"
+          [class]="getStatusClass(product)"
         >
-          @if (getPropertyValue(product, 'status') == 1) { Xem Chi Tiết }
-          @else { Ngừng Kinh Doanh }
+          @if (getPropertyValue(product, 'status') == 1) {
+          {{ 'userProduct.detail' | translate }}
+          } @else {
+          {{ 'userProduct.paused' | translate }}
+          }
         </button>
       </div>
     </div>
+    }
   </div>
 
   <div class="pagination-bottom">
@@ -102,20 +99,26 @@
       <div class="page-size-selector">
         <label>Sản phẩm/trang:</label>
         <select
-          [(ngModel)]="pageSize"
-          (change)="onPageSizeChange(pageSize)"
+          [value]="pageSize()"
+          (change)="onPageSizeChange($any($event.target).value)"
           class="page-size-select"
         >
-          <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+          @for (size of pageSizeOptions; track size) {
+          <option [value]="size">{{ size }}</option>
+          }
         </select>
       </div>
 
       <div class="pagination-buttons">
-        <button (click)="previousPage()" [disabled]="currentPage <= 1" class="pagination-btn">
+        <button (click)="previousPage()" [disabled]="currentPage() <= 1" class="pagination-btn">
           ← Trước
         </button>
-        <span class="page-indicator">Trang {{ currentPage }} / {{ totalPages }}</span>
-        <button (click)="nextPage()" [disabled]="currentPage >= totalPages" class="pagination-btn">
+        <span class="page-indicator">Trang {{ currentPage() }} / {{ totalPages() }}</span>
+        <button
+          (click)="nextPage()"
+          [disabled]="currentPage() >= totalPages()"
+          class="pagination-btn"
+        >
           Sau →
         </button>
       </div>

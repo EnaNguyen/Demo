@@ -1,0 +1,11 @@
+{
+    "userProduct": {
+        "title": "Sản phẩm",
+        "detail": "Xem chi tiết",
+        "paused": "Ngừng Kinh Doanh"
+    },
+    "language": {
+        "toggle": "English",
+        "current": "Tiếng Việt"
+    }
+}

@@ -60,7 +60,7 @@ function onFilterSelect(filterGroups: FilterGroup): { results: Result; url: stri
               for (let d of dataSource) {
                 for (let prop of d.properties || []) {
                   const val = Number(prop.value);
-                  if (prop.label == option.target && val >= range.min && val <= range.max) {
+                  if (prop.label == option.target && !isNaN(val) && val >= range.min && val <= range.max) {
                     matchingKeys.add(d.key as string | number);
                     break;
                   }
@@ -73,7 +73,7 @@ function onFilterSelect(filterGroups: FilterGroup): { results: Result; url: stri
               for (let d of dataSource) {
                 for (let prop of d.properties || []) {
                   const val = new Date(prop.value).getTime();
-                  if (prop.label == option.target && val >= range.min.getTime() && val <= range.max.getTime()) {
+                  if (prop.label == option.target && !isNaN(val) && val >= range.min.getTime() && val <= range.max.getTime()) {
                     matchingKeys.add(d.key as string | number);
                     break;
                   }
@@ -88,14 +88,18 @@ function onFilterSelect(filterGroups: FilterGroup): { results: Result; url: stri
               urlParams.set(paramName, value);
             }
             for (let d of dataSource) {
-              for (let prop of d.properties || []) {
-                if (
-                  prop.label == option.target &&
-                  prop.value &&
-                  String(prop.value).toLowerCase().includes(value.toLowerCase())
-                ) {
-                  matchingKeys.add(d.key as string | number);
-                  break;
+              if (option.target === 'label' && d.label && d.label.toLowerCase().includes(value.toLowerCase())) {
+                matchingKeys.add(d.key as string | number);
+              } else {
+                for (let prop of d.properties || []) {
+                  if (
+                    prop.label == option.target &&
+                    prop.value &&
+                    String(prop.value).toLowerCase().includes(value.toLowerCase())
+                  ) {
+                    matchingKeys.add(d.key as string | number);
+                    break;
+                  }
                 }
               }
             }
@@ -151,6 +155,7 @@ function onFilterSelect(filterGroups: FilterGroup): { results: Result; url: stri
           resultsFilter.key.push(item.key);
         }
       });
+      console.log('Filtered Results:', resultsFilter);
     }
   } catch (error) {
     return { results: resultsFilter, url: '' };
