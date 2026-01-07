@@ -1,8 +1,42 @@
 
-.delay-150 {
-  animation-delay: 150ms;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+@keyframes slideInForm {
+  from {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+}
+
+.fadeInUp {
+  animation: fadeInUp 500ms ease-out forwards;
+}
+
+.slideInForm {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(100px);
+  animation: slideInForm 400ms ease-out forwards;
+}
+
+.delay-150 {
+  animation-delay: 100ms;
+}
 
 input {
   transition: all 0.3s ease;

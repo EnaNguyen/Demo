@@ -2,35 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { trigger, transition, style, animate } from '@angular/animations';
 import { AuthorizeContext } from '../../../shared/pipe/contexts/authorizeContext';
-import { userInfo } from 'os';
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatIconModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
-  animations: [
-    trigger('fadeInUp', [
-      transition(':enter', [
-        style({ opacity: 0, transform: 'translateY(20px)' }),
-        animate('500ms 100ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
-      ]),
-      transition(':leave', [
-        animate('300ms ease-in', style({ opacity: 0, transform: 'translateY(-20px)' }))
-      ])
-    ]),
-    trigger('slideInForm', [
-      transition(':enter', [
-        style({ opacity: 0, transform: 'translateX(100px)' }),
-        animate('400ms 350ms cubic-bezier(0.34, 1.56, 0.64, 1)', style({ opacity: 1, transform: 'translateX(0)' }))
-      ]),
-      transition(':leave', [
-        animate('300ms ease-in', style({ opacity: 0, transform: 'translateX(-100px)' }))
-      ])
-    ])
-  ]
 })
 export class Login implements OnInit {
   isLogin = true;
@@ -42,7 +20,6 @@ export class Login implements OnInit {
   ngOnInit(): void {
     this.initializeForms();
   }
-
   initializeForms(): void {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required]],

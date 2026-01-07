@@ -12,7 +12,12 @@
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "ES2022",
+    "target": "es2023",
+    "lib": [
+      "ES2023",                  
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "preserve",
     "paths": {
       "ui": [

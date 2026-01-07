@@ -89,14 +89,16 @@ export class Detail implements OnInit {
       return;
     }
 
+    const price = this.getPropertyValue(product, 'price') || 0;
     const newItem: AddItemToCartModel = {
       cartDetailId: product.key as number,
       quantity: this.quantity,
+      price: price,
     };
 
     const storeTyped = this.cartStore as any;
     storeTyped.addItemToCart(newItem);
     alert(`Đã thêm ${this.quantity} sản phẩm vào giỏ hàng!`);
-    console.log('Thêm vào giỏ hàng:', { product, quantity: this.quantity });
+
   }
 }

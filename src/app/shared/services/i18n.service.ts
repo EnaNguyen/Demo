@@ -1,45 +1,66 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
-import { signal, effect } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+// src/app/services/i18n.service.ts
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, tap } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class I18nService {
-  private currentLanguage = signal<'en-US' | 'vi-VN'>('en-US');
-  public language$ = this.currentLanguage.asReadonly();
+  private currentLang = 'en-translation';
+  private translations: { [key: string]: string } = {};
+  private translationsSubject = new BehaviorSubject<{ [key: string]: string }>({});
+  translations$ = this.translationsSubject.asObservable();
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-    if (isPlatformBrowser(this.platformId)) {
-      const savedLanguage = localStorage.getItem('i18n-language') as 'en-US' | 'vi-VN' | null;
-      if (savedLanguage && ['en-US', 'vi-VN'].includes(savedLanguage)) {
-        this.currentLanguage.set(savedLanguage);
-      } else {
-        const browserLang = navigator.language;
-        if (browserLang.startsWith('vi')) {
-          this.currentLanguage.set('vi-VN');
-        }
-      }
+  constructor(private http: HttpClient) {
+    this.loadTranslations(this.currentLang);
+  }
 
-      // Save language to localStorage whenever it changes (only on browser)
-      effect(() => {
-        if (isPlatformBrowser(this.platformId)) {
-          localStorage.setItem('i18n-language', this.currentLanguage());
-        }
-      });
+  getCurrentLanguage(): string {
+    return this.currentLang;
+  }
+  setCurrentLanguage(lang?: string) {
+    if (lang) {
+      this.currentLang = lang;
+    } else {
+      // Auto-toggle nếu không truyền language
+      this.currentLang = this.currentLang === 'en-translation' ? 'vi-translation' : 'en-translation';
     }
+    this.loadTranslations(this.currentLang);
+  }
+  translate(key: string): string {
+    // Support nested keys like 'footer.contactInfo'
+    const keys = key.split('.');
+    let value: any = this.translations;
+    
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return key; // Return key if not found
+      }
+    }
+    
+    return typeof value === 'string' ? value : key;
   }
 
-  getCurrentLanguage(): 'en-US' | 'vi-VN' {
-    return this.currentLanguage();
-  }
-
-  setLanguage(language: 'en-US' | 'vi-VN'): void {
-    this.currentLanguage.set(language);
-  }
-
-  toggleLanguage(): void {
-    const current = this.currentLanguage();
-    this.currentLanguage.set(current === 'en-US' ? 'vi-VN' : 'en-US');
+  private loadTranslations(lang: string) {
+    console.log(`Loading translations for ${lang}...`);
+    this.http
+      .get<{ [key: string]: any }>(`assets/i18n/${lang}.json`)
+      .pipe(
+        tap((data) => {
+          console.log(`Translations loaded for ${lang}:`, data);
+          this.translations = data;
+          this.translationsSubject.next(data);
+        })
+      )
+      .subscribe({
+        error: (err) => {
+          console.error(`Không tải được file i18n cho ${lang}`, err);
+          this.translations = {};
+          this.translationsSubject.next({});
+        },
+      });
   }
 }

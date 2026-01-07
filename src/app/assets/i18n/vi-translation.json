@@ -1,0 +1,31 @@
+{
+  "show": "Hiển Thị",
+  "in": "Trong",
+  "products": "Sản Phẩm",
+  "userProduct": {
+    "title": "Danh Sách Sản phẩm",
+    "detail": "Xem chi tiết",
+    "paused": "Ngừng Kinh Doanh",
+    "showFilter": "Hiển Thị Bộ Lọc",
+    "hideFilter": "Ẩn Bộ Lọc",
+    "productsPerPage": "Sản phẩm / trang",
+    "page": "Trang",
+    "releaseDate": "Ngày Phát Hành",
+    "price": "Giá",
+    "brand": "Hãng"
+  },
+  "footer": {
+    "contactInfo": "Thông Tin Liên Hệ",
+    "store": "Cửa Hàng",
+    "email": "Email",
+    "phone": "Điện Thoại",
+    "address": "Địa Chỉ",
+    "categories": "Danh Mục",
+    "followUs": "Theo Dõi Chúng Tôi",
+    "language": "Ngôn Ngữ"
+  },
+  "language": {
+    "toggle": "English",
+    "current": "Tiếng Việt"
+  }
+}

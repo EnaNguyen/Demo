@@ -1,0 +1,31 @@
+{
+  "show": "Show",
+  "in": "In",
+  "products": "Products",
+  "userProduct": {
+    "title": "Products",
+    "detail": "View Details",
+    "paused": "Stop Selling",
+    "showFilter": "Show Filter",
+    "hideFilter": "Hide Filter",
+    "productsPerPage": "Products / page",
+    "page": "Page",
+    "releaseDate": "Release Date",
+    "price": "Price",
+    "brand": "Brand"
+  },
+  "footer": {
+    "contactInfo": "Contact Information",
+    "store": "Store",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "categories": "Categories",
+    "followUs": "Follow Us",
+    "language": "Language"
+  },
+  "language": {
+    "toggle": "Tiếng Việt",
+    "current": "English"
+  }
+}

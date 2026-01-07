@@ -7,13 +7,13 @@
             <mat-icon class="text-4xl">hotel</mat-icon>
           </div>
 
-          <div [@fadeInUp]="isLogin ? 'welcome' : 'join'">
+          <div class="fadeInUp">
             <h1 class="text-4xl lg:text-5xl font-bold">
               {{ isLogin ? "Chào mừng quay lại!" : "Tạo tài khoản mới" }}
             </h1>
           </div>
 
-          <div [@fadeInUp]="isLogin ? 'desc1' : 'desc2'" class="text-base delay-150">
+          <div class="fadeInUp delay-150 text-base">
             <p class="text-blue-100 text-lg leading-relaxed">
               {{ isLogin
                 ? "Đăng nhập để tiếp tục quản lý đặt phòng của bạn"
@@ -25,7 +25,7 @@
       <div class="flex-1 bg-white p-8 lg:p-10 xl:p-16 flex flex-col justify-center min-h-[680px] relative overflow-hidden">
         <div class="max-w-md mx-auto w-full h-[620px] relative">
           <!-- Login Form -->
-          <div *ngIf="isLogin" [@slideInForm] class="absolute inset-0 w-full">
+          <div *ngIf="isLogin" class="slideInForm absolute inset-0 w-full">
             <h2 class="text-3xl font-bold text-gray-900 mb-8">Đăng Nhập</h2>
             <form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" class="space-y-6">
               <div>
@@ -76,7 +76,7 @@
           </div>
 
           <!-- Register Form -->
-          <div *ngIf="!isLogin" [@slideInForm] class="absolute inset-0 w-full">
+          <div *ngIf="!isLogin" class="slideInForm absolute inset-0 w-full">
             <h2 class="text-3xl font-bold text-gray-900 mb-8">Tạo Tài Khoản</h2>
             <form [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()" class="space-y-6">
               <div>

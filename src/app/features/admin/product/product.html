@@ -1,41 +1,153 @@
 <div class="admin-product-container">
-  <!-- Header -->
   <div class="admin-header">
     <h1>Quản Lý Sản Phẩm</h1>
-    <button class="btn-add-product" (click)="openCreateModal()">+ Thêm Sản Phẩm</button>
+    <button class="btn-add-product" (click)="onAddProduct()">+ Thêm Sản Phẩm</button>
   </div>
-
-  <!-- Filter Section -->
   <div class="filter-section">
+    <div style="padding: 15px 20px; border-bottom: 1px solid #eee; background: #f9f9f9;">
+      <input
+        type="text"
+        placeholder="Tìm kiếm sản phẩm theo tên..."
+        (input)="onSearch($event)"
+        [value]="searchQuery()"
+        style="
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+        "
+      />
+    </div>
     <button class="btn-toggle-filter" (click)="toggleFilter()">
-      {{ showFilter() ? 'Ẩn Bộ Lọc' : 'Hiện Bộ Lọc' }}
+      {{ isFilterOpen() ? 'Ẩn Bộ Lọc' : 'Hiện Bộ Lọc' }}
     </button>
-
-    @if (showFilter()) {
+    @if (isFilterOpen()) {
     <div class="filters-wrapper">
-      @for (filterOption of filterConfig().request; track filterOption.title) {
-      <app-filter-wrapper [filterOption]="filterOption" (filterChange)="onFilterChange($event)">
-      </app-filter-wrapper>
-      }
+      <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #eee;">
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #333;">
+          Thương Hiệu
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          @for (brand of allBrands(); track brand) {
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+            <input
+              type="checkbox"
+              [checked]="selectedBrands().includes(brand)"
+              (change)="onBrandChange(brand, $event)"
+            />
+            {{ brand }}
+          </label>
+          }
+        </div>
+      </div>
+      <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #eee;">
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #333;">
+          Tình Trạng
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+            <input
+              type="radio"
+              name="status"
+              [checked]="selectedStatus() === ''"
+              (change)="onStatusChange('')"
+            />
+            Tất cả
+          </label>
+          @for (status of allStatuses(); track status) {
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+            <input
+              type="radio"
+              name="status"
+              [checked]="selectedStatus() === status"
+              (change)="onStatusChange(status)"
+            />
+            {{ status }}
+          </label>
+          }
+        </div>
+      </div>
+      <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #eee;">
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #333;">
+          Khoảng Giá (VNĐ)
+        </h4>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input
+            type="number"
+            placeholder="Từ"
+            [value]="priceRange().min"
+            (change)="priceRange().min = $any($event.target).value; onPriceChange()"
+            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;"
+          />
+          <span>-</span>
+          <input
+            type="number"
+            placeholder="Đến"
+            [value]="priceRange().max"
+            (change)="priceRange().max = $any($event.target).value; onPriceChange()"
+            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;"
+          />
+        </div>
+      </div>
+      <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #eee;">
+        <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #333;">
+          Khoảng Ngày Ra Mắt
+        </h4>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input
+            type="date"
+            [value]="dateRange().min"
+            (change)="dateRange().min = $any($event.target).value; onDateChange()"
+            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;"
+          />
+          <span>-</span>
+          <input
+            type="date"
+            [value]="dateRange().max"
+            (change)="dateRange().max = $any($event.target).value; onDateChange()"
+            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;"
+          />
+        </div>
+      </div>
+      <button
+        (click)="resetFilters()"
+        style="
+          width: 100%;
+          padding: 10px;
+          background: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 13px;
+          transition: background 0.3s;
+        "
+      >
+        Xóa Bộ Lọc
+      </button>
     </div>
     }
   </div>
-
-  <!-- Stats Bar -->
   <div class="stats-bar">
-    <span class="stat"
-      >Tổng: <strong>{{ totalItems() }}</strong> sản phẩm</span
-    >
-    <span class="stat"
-      >Hiển thị: <strong>{{ displayedProducts().length }}</strong> / trang</span
-    >
-    <span class="stat"
-      >Trang: <strong>{{ currentPage() }} / {{ totalPages() }}</strong></span
-    >
+    <span class="stat">Tổng: <strong>{{ productsCount() }}</strong> sản phẩm</span>
+    <span class="stat">Hiển thị: <strong>{{ paginatedProducts().length }}</strong> / trang</span>
+    <span class="stat">Kết quả: <strong>{{ filteredProducts().length }}</strong> sản phẩm</span>
+    <span class="stat">Trang: <strong>{{ currentPage() }} / {{ totalPages() }}</strong></span>
   </div>
-
-  <!-- Products Table -->
   <div class="table-container">
+    @if (isLoading()) {
+    <div
+      style="
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+      "
+    >
+      <p>Đang tải dữ liệu...</p>
+    </div>
+    } @else {
     <table class="products-table">
       <thead>
         <tr>
@@ -51,61 +163,42 @@
         </tr>
       </thead>
       <tbody>
-        @for (product of displayedProducts(); track product.id ?? product.key) {
-        <tr [class]="getStatusClass(product)">
-          <td class="col-id">{{ product.key }}</td>
+        @for (product of paginatedProducts(); track product.id) {
+        <tr [ngClass]="'status-' + (product.quantity > 0 ? 'available' : 'out')">
+          <td class="col-id">{{ product.id }}</td>
           <td class="col-image">
-            <img
-              [src]="getProductImage(product)"
-              [alt]="product.label"
-              class="product-image"
-              (error)="onImageError($event)"
-            />
+            <img [src]="product.imageUrl" [alt]="product.name" class="product-image" />
           </td>
-          <td class="col-name">{{ product.label }}</td>
-          <td class="col-brand">{{ getPropertyValue(product, 'brand') }}</td>
-          <td class="col-date">{{ getPropertyValue(product, 'releaseDate') | formatDate }}</td>
-          <td class="col-price">{{ getPropertyValue(product, 'price') | formatPrice }}</td>
+          <td class="col-name">{{ product.name }}</td>
+          <td class="col-brand">{{ product.brand }}</td>
+          <td class="col-date">{{ formatDate(product.releaseDate) }}</td>
+          <td class="col-price">{{ formatPrice(product.price) }}</td>
           <td class="col-quantity">
-            <span [ngClass]="'qty-' + (getProductQuantity(product) > 0 ? 'available' : 'empty')">
-              {{ getProductQuantity(product) }}
+            <span
+              [ngClass]="product.quantity > 0 ? 'qty-available' : 'qty-empty'"
+            >
+              {{ product.quantity }}
             </span>
           </td>
           <td class="col-status">
-            <span [ngClass]="'badge-' + getProductStatus(product).toLowerCase().replace(' ', '-')">
-              {{ getProductStatus(product) }}
+            <span [ngClass]="'badge-' + product.status.toLowerCase().replace(/\\s+/g, '-')">
+              {{ product.status }}
             </span>
           </td>
           <td class="col-actions">
             <div class="action-dropdown">
-              <button
-                mat-icon-button
-                [matMenuTriggerFor]="actionMenu"
-                (click)="$event.stopPropagation()"
-              >
-                <span class="menu-dots">⋮</span>
-              </button>
-
-              <mat-menu #actionMenu="matMenu" xPosition="before" overlapTrigger="false">
-                <button mat-menu-item class="menu-item edit" (click)="editProduct(product)">
-                  <mat-icon>edit</mat-icon>
-                  <span>Sửa</span>
+              <button class="btn-actions-menu" (click)="toggleMenu($event)">⋮</button>
+              <div class="dropdown-menu" style="display: none;">
+                <button class="dropdown-item edit" (click)="onEditProduct(product)">
+                  ✎ Sửa
                 </button>
-
-                <button
-                  mat-menu-item
-                  class="menu-item toggle"
-                  (click)="toggleProductStatus(product)"
-                >
-                  <mat-icon>
-                    @if (getPropertyValue(product, 'status') == 1) { pause_circle } @else {
-                    play_circle }
-                  </mat-icon>
-                  <span>
-                    @if (getPropertyValue(product, 'status') == 1) { Ngừng Bán } @else { Mở Bán }
-                  </span>
+                <button class="dropdown-item toggle" (click)="onToggleStatus(product)">
+                  ◐ Thay Đổi
                 </button>
-              </mat-menu>
+                <button class="dropdown-item delete" (click)="onDeleteProduct(product)">
+                  ✕ Xóa
+                </button>
+              </div>
             </div>
           </td>
         </tr>
@@ -118,19 +211,24 @@
         }
       </tbody>
     </table>
+    }
   </div>
-
-  <!-- Pagination -->
   <div class="pagination-section">
     <div class="pagination">
-      <button class="btn-page" (click)="previousPage()" [disabled]="currentPage() === 1">
+      <button class="btn-page" (click)="goToFirstPage()" [disabled]="currentPage() === 1">
+        ⟨⟨
+      </button>
+      <button class="btn-page" (click)="goToPreviousPage()" [disabled]="currentPage() === 1">
         ← Trước
       </button>
 
       <span class="page-info"> Trang {{ currentPage() }} / {{ totalPages() }} </span>
 
-      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage() >= totalPages()">
+      <button class="btn-page" (click)="goToNextPage()" [disabled]="currentPage() >= totalPages()">
         Tiếp Theo →
+      </button>
+      <button class="btn-page" (click)="goToLastPage()" [disabled]="currentPage() >= totalPages()">
+        ⟩⟩
       </button>
     </div>
 
@@ -138,16 +236,13 @@
       <label>Hiển thị:</label>
       <select
         [value]="pageSize()"
-        (change)="onPageSizeChange($any($event.target).value)"
-        class="page-size-select"
+        (change)="onPageSizeChange(+$any($event.target).value)"
       >
-        @for (size of pageSizeOptions; track size) {
-        <option [value]="size">{{ size }} sản phẩm</option>
-        }
+        <option [value]="5">5 sản phẩm</option>
+        <option [value]="10">10 sản phẩm</option>
+        <option [value]="20">20 sản phẩm</option>
+        <option [value]="50">50 sản phẩm</option>
       </select>
     </div>
   </div>
 </div>
-
-<app-update-product #updateProductModal></app-update-product>
-<app-create-product #createProductModal></app-create-product>

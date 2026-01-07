@@ -1,12 +1,17 @@
 <div class="container">
   <!-- Page Header -->
   <div class="page-header">
-    <h1 style="font-size: 2rem; height: 70px; padding: 30px 10px 10px 10px">Danh Sách Sản Phẩm</h1>
+    <h1 style="font-size: 2rem; height: 70px; padding: 30px 10px 10px 10px">{{ 'userProduct.title' | translate }}</h1>
     <button class="filter-toggle-btn" (click)="toggleFilter()">
-      <span>{{ showFilter() ? 'Ẩn Bộ Lọc' : 'Hiển Thị Bộ Lọc' }}</span>
+      <span>
+        @if (showFilter()) {
+          {{ 'userProduct.hideFilter' | translate }}
+        } @else {
+          {{ 'userProduct.showFilter' | translate }}
+        }
+      </span>
     </button>
   </div>
-
   <!-- Filter Section -->
   @if (showFilter()) {
   <div class="filter-section show">
@@ -24,10 +29,10 @@
   <div class="pagination-section">
     <div class="pagination-info">
       <span>
-        Hiển thị
+        {{ 'show' | translate }}
         <strong>{{ (currentPage() - 1) * pageSize() + 1 }}</strong> -
         <strong>{{ Math.min(currentPage() * pageSize(), totalItems()) }}</strong>
-        trong tổng <strong>{{ totalItems() }}</strong> sản phẩm
+        {{'in' | translate}} <strong>{{ totalItems() }}</strong> {{'products' | translate }}
       </span>
     </div>
   </div>

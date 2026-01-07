@@ -41,7 +41,7 @@ export class UserLayoutComponent {
         dropdownList: [
           { title: 'Hồ sơ', url: '/profile', iconSrc: '/assets/icons/user.svg' },
           { title: 'Đơn hàng', url: '/history', iconSrc: '/assets/icons/orders.svg' },
-          { title: 'Đăng xuất', url: '/logout', iconSrc: '/assets/icons/logout.svg' }
+          { title: 'Đăng nhập', url: '/login', iconSrc: '/assets/icons/logout.svg' }
         ]
       }
     ]

@@ -72,6 +72,13 @@ export const CartStore = signalStore(
               switchMap((carts) => {
                 const userCart = carts.find((c: any) => c.userId.toString() === userId.toString());
                 if (!userCart) {
+                  // Reset cart to initial state if user has no cart
+                  patchState(store, {
+                    id: undefined,
+                    userId: userId,
+                    items: [],
+                    totalPrice: 0,
+                  } as CartPersonalView);
                   return of(null);
                 }
                 return http.get<any>('http://localhost:3000/cartItems').pipe(
@@ -80,6 +87,7 @@ export const CartStore = signalStore(
                       .filter((ci: any) => ci.cartId.toString() === userCart.cartId.toString())
                       .map((item: any) => ({
                         id: item.id,
+                        detailId: item.id,
                         cartId: item.cartId,
                         productId: item.productId,
                         quantity: item.quantity,
@@ -146,7 +154,23 @@ export const CartStore = signalStore(
         const updatedItems = state.items!.filter((i) => i.id !== itemId);
         const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
         patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
-        updateCartOnServer(updatedItems, totalPrice, state.id, state.userId, http, platformId);
+        
+        if (isPlatformBrowser(platformId)) {
+          http.delete(`http://localhost:3000/cartItems/${itemId}`).pipe(
+            tap(() => {
+              const finalState = getState(store);
+              updateCartOnServer(finalState.items || [], finalState.totalPrice, finalState.id, finalState.userId, http, platformId);
+            }),
+            catchError((error) => {
+              console.error('Error deleting cart item:', error);
+              return of(null);
+            })
+          ).subscribe({
+            next: () => {
+              console.log('CartItem xóa thành công');
+            }
+          });
+        }
       },
 
       addItemToCart(newItem: AddItemToCartModel): void {
@@ -161,49 +185,47 @@ export const CartStore = signalStore(
           );
           const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
           patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
+          console.log("cập nhật", updatedItems);
           updateCartOnServer(updatedItems, totalPrice, state.id, state.userId, http, platformId);
         } else {
-          http.get<any>(`http://localhost:3000/products/${newItem.cartDetailId}`).pipe(
-            switchMap((product) => {
-              const productPrice = product.price;
-              const newCartItem: CartDetailPersonalView = {
-                id: new Date().getTime(),
-                cartId: state.id || 1,
-                productId: newItem.cartDetailId || 0,
-                quantity: newItem.quantity,
-                price: productPrice,
-              };
-              const currentState = getState(store);
-              const updatedItems = [...(currentState.items || []), newCartItem];
-              const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-              patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
-              
-              if (isPlatformBrowser(platformId)) {
-                return http.post(`http://localhost:3000/cartItems`, {
-                  id: newCartItem.id,
-                  cartId: newCartItem.cartId,
-                  productId: newCartItem.productId,
-                  quantity: newCartItem.quantity,
-                  price: newCartItem.price,
-                });
+          const productPrice = newItem.price || 0;
+          const newCartItem: CartDetailPersonalView = {
+            id: new Date().getTime(),
+            cartId: state.id || 1,
+            productId: newItem.cartDetailId || 0,
+            quantity: newItem.quantity,
+            price: productPrice,
+          };
+          const currentState = getState(store);
+          const updatedItems = [...(currentState.items || []), newCartItem];
+          const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+          patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
+          
+          if (isPlatformBrowser(platformId)) {
+            http.post(`http://localhost:3000/cartItems`, {
+              id: newCartItem.id,
+              detailId: newCartItem.id,
+              cartId: newCartItem.cartId,
+              productId: newCartItem.productId,
+              quantity: newCartItem.quantity,
+              price: newCartItem.price,
+            }).pipe(
+              tap(() => {
+                const finalState = getState(store);
+                updateCartOnServer(finalState.items || [], finalState.totalPrice, finalState.id, finalState.userId, http, platformId);
+              }),
+              catchError((error) => {
+                console.error('Error adding item to cart:', error);
+                return of(null);
+              })
+            ).subscribe({
+              next: (response) => {
+                if (response) {
+                  console.log('CartItem tạo mới thành công:', response);
+                }
               }
-              return of(null);
-            }),
-            tap(() => {
-              const finalState = getState(store);
-              updateCartOnServer(finalState.items || [], finalState.totalPrice, finalState.id, finalState.userId, http, platformId);
-            }),
-            catchError((error) => {
-              console.error('Error adding item to cart:', error);
-              return of(null);
-            })
-          ).subscribe({
-            next: (response) => {
-              if (response) {
-                console.log('CartItem tạo mới thành công:', response);
-              }
-            }
-          });
+            });
+          }
         }
       },
     };
@@ -224,9 +246,35 @@ export const CartStore = signalStore(
   withHooks({
     onInit(store) {
       const auth = inject(AuthorizeContext);
-      const userId = auth.getUser()?.id || 1;
-      const storeTyped = store as any;
-      storeTyped.loadCart(userId);
+      const platformId = inject(PLATFORM_ID);
+      const user = auth.getUser();
+      if (user && user.id) {
+        const storeTyped = store as any;
+        storeTyped.loadCart(user.id);
+      }
+      
+      if (isPlatformBrowser(platformId)) {
+        const checkUserInterval = setInterval(() => {
+          const currentUser = auth.getUser();
+          const currentState = getState(store);
+          if (currentUser && currentUser.id && currentState.userId !== currentUser.id) {
+            console.log('User changed, reloading cart for user:', currentUser.id);
+            const storeTyped = store as any;
+            storeTyped.loadCart(currentUser.id);
+          }
+          else if (!currentUser && currentState.userId) {
+            console.log('User logged out, clearing cart');
+            patchState(store, {
+              id: undefined,
+              userId: 1,
+              items: [],
+              totalPrice: 0,
+            } as CartPersonalView);
+          }
+        }, 500);
+        return () => clearInterval(checkUserInterval);
+      }
+      return undefined;
     },
   })
 );
