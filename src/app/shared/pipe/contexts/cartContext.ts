@@ -72,7 +72,6 @@ export const CartStore = signalStore(
               switchMap((carts) => {
                 const userCart = carts.find((c: any) => c.userId.toString() === userId.toString());
                 if (!userCart) {
-                  // Reset cart to initial state if user has no cart
                   patchState(store, {
                     id: undefined,
                     userId: userId,

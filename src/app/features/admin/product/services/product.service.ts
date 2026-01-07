@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ProductModel } from '../model/product.model';
 import { filter, map, Observable } from 'rxjs';
+import { updateProduct } from '../model/product.model';
+import { DataObject, PropertiesObject } from '../model/product.model';
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private readonly apiUrl = 'http://localhost:3000/products';
@@ -29,7 +31,7 @@ export class ProductService {
           };
 
           return {
-            id: Number(item.id),
+            id: item.id,
             key: item.key,
             name: getValue('name') || '',
             description: getValue('description') || '',
@@ -111,4 +113,105 @@ export class ProductService {
   //     })
   //   );
   // }
+  getPropertyValue(properties: Array<{ label: string; value: any }>, label: string): any {
+    return properties?.find((p) => p.label === label)?.value ?? null;
+  }
+  buildCreatePayload(newProduct: updateProduct): any {
+    return {
+      key: Date.now(),
+      properties: [
+        { label: 'name', value: newProduct.name },
+        { label: 'price', value: newProduct.price },
+        {
+          label: 'releaseDate',
+          value: newProduct.releaseDate || new Date().toISOString().split('T')[0],
+        },
+        { label: 'brand', value: newProduct.brand },
+        { label: 'imageUrl', value: newProduct.imageUrl || newProduct.imageLocate || '' },
+        { label: 'description', value: newProduct.description || '' },
+        { label: 'quantity', value: newProduct.quantity },
+        { label: 'status', value: newProduct.status !== undefined ? Number(newProduct.status) : 1 },
+      ],
+    };
+  }
+  transformToProductModel(raw: any): ProductModel {
+    const properties = raw.properties || [];
+    const getProp = (label: string) => {
+      const prop = properties.find((p: PropertiesObject) => p.label === label);
+      return prop ? prop.value : null;
+    };
+    return {
+      id: raw.id,
+      key: raw.key || raw.id,
+      name: getProp('name') || `Product ${raw.key}`,
+      description: getProp('description') || '',
+      price: Number(getProp('price')) || 0,
+      brand: getProp('brand') || '',
+      imageUrl: getProp('imageUrl') || '',
+      quantity: Number(getProp('quantity')) || 0,
+      status: getProp('status') || 'active',
+      releaseDate: getProp('releaseDate') || new Date().toISOString().split('T')[0],
+    };
+  }
+  buildUpdatePayload(id: number | string, product: updateProduct, releaseDate?: any): any {
+    return {
+      id,
+      key: id,
+      properties: [
+        { label: 'name', value: product.name },
+        { label: 'price', value: product.price },
+        { label: 'releaseDate', value: releaseDate || new Date().toISOString().split('T')[0] },
+        { label: 'brand', value: product.brand },
+        { label: 'imageUrl', value: product.imageUrl || product.imageLocate || '' },
+        { label: 'description', value: product.description || '' },
+        { label: 'quantity', value: product.quantity },
+        { label: 'status', value: product.status !== undefined ? Number(product.status) : 1 },
+      ],
+    };
+  }
+  transformRawToProducts(raw: any[]): ProductModel[] {
+    return raw.map((product) => {
+      const properties = product.properties || [];
+      const getProp = (label: string) => {
+        const prop = properties.find((p: PropertiesObject) => p.label === label);
+        return prop ? prop.value : null;
+      };
+      return {
+        id: product.id,
+        key: product.key || product.id,
+        name: getProp('name') || `Product ${product.key || product.id}`,
+        description: getProp('description') || '',
+        price: Number(getProp('price')) || 0,
+        brand: getProp('brand') || '',
+        imageUrl: getProp('imageUrl') || '',
+        quantity: Number(getProp('quantity')) || 0,
+        status: getProp('status') || 'active',
+        releaseDate: getProp('releaseDate') || new Date().toISOString().split('T')[0],
+      };
+    });
+  }
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }
+  statusUpdate(id: string ,product: ProductModel): any {
+    return {
+      id,
+      key: id,
+      properties: [
+        { label: 'name', value: product.name },
+        { label: 'price', value: product.price },
+        { label: 'releaseDate', value: product.releaseDate || new Date().toISOString().split('T')[0] },
+        { label: 'brand', value: product.brand },
+        { label: 'imageUrl', value: product.imageUrl || '' },
+        { label: 'description', value: product.description || '' },
+        { label: 'quantity', value: product.quantity },
+        { label: 'status', value: product.status === "1" ? "0" : "1" },
+      ],
+    };
+  }
 }

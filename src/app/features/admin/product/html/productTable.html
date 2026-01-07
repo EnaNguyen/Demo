@@ -1,0 +1,57 @@
+<table class="products-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Ảnh</th>
+      <th>Tên Sản Phẩm</th>
+      <th>Thương Hiệu</th>
+      <th>Ngày Ra Mắt</th>
+      <th>Giá</th>
+      <th>Số Lượng</th>
+      <th>Tình Trạng</th>
+      <th>Thao Tác</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (product of paginatedProducts(); track product.id) {
+    <tr [ngClass]="'status-' + (product.quantity > 0 ? 'available' : 'out')">
+      <td class="col-id">{{ product.id }}</td>
+      <td class="col-image">
+        <img [src]="product.imageUrl" [alt]="product.name" class="product-image" />
+      </td>
+      <td class="col-name">{{ product.name }}</td>
+      <td class="col-brand">{{ product.brand }}</td>
+      <td class="col-date">{{ product.releaseDate }}</td>
+      <td class="col-price">{{ product.price }}</td>
+      <td class="col-quantity">
+        <span [ngClass]="product.quantity > 0 ? 'qty-available' : 'qty-empty'">
+          {{ product.quantity }}
+        </span>
+      </td>
+      <td class="col-status">
+        <span [ngClass]="'badge-' + product.status.toLowerCase().replace(/\\s+/g, '-')">
+          {{ product.status }}
+        </span>
+      </td>
+      <td class="col-actions">
+        <div class="action-dropdown">
+          <button class="btn-actions-menu" (click)="toggleMenu($event)">⋮</button>
+          <div class="dropdown-menu" style="display: none">
+            <button class="dropdown-item edit" (click)="onEditProduct(product)">✎ Sửa</button>
+            <button class="dropdown-item toggle" (click)="onToggleStatus(product)">
+              ◐ Thay Đổi
+            </button>
+            <button class="dropdown-item delete" (click)="onDeleteProduct(product)">✕ Xóa</button>
+          </div>
+        </div>
+      </td>
+    </tr>
+    } @empty {
+    <tr>
+      <td colspan="9" class="no-data">
+        <p>Không có sản phẩm nào phù hợp với điều kiện tìm kiếm</p>
+      </td>
+    </tr>
+    }
+  </tbody>
+</table>

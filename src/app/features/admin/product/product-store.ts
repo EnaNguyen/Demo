@@ -12,8 +12,10 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { ProductModel } from '../product/model/product.model';
 import { ProductService } from './services/product.service';
-import { Router } from 'express';
-
+import { updateProduct } from '../product/model/product.model';
+import { HttpClient } from '@angular/common/http';
+import { DataObject } from './model/product.model';
+import { Data } from '@angular/router';
 type FilterState = {
   name: string;
   target: string[];
@@ -83,7 +85,7 @@ const initialState: ProductSearchState = {
     },
   ],
 };
-
+const API_URL = 'http://localhost:3000/products';
 export const ProductStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
@@ -155,7 +157,7 @@ export const ProductStore = signalStore(
   withComputed((store) => ({
     productsCount: computed(() => store.filteredProducts().length),
   })),
-  withMethods((store, productService = inject(ProductService)) => ({
+  withMethods((store, productService = inject(ProductService), http = inject(HttpClient)) => ({
     loadProducts: rxMethod<string>(
       pipe(
         tap(() => patchState(store, { isLoading: true })),
@@ -203,5 +205,59 @@ export const ProductStore = signalStore(
         filter: state.filter.map((f) => (f.type === 'select' ? { ...f, query: brand } : f)),
       }));
     },
+    createProduct: rxMethod<updateProduct>(
+      pipe(
+        switchMap((newProduct) => {
+          const mappingData = productService.buildCreatePayload(newProduct);
+          return http.post<DataObject>(API_URL, mappingData).pipe(
+            tap((createdProduct) => {
+              console.log('Created Product:' + createdProduct);
+              const newProductModel: ProductModel =
+                productService.transformToProductModel(createdProduct);
+              patchState(store, (state) => ({
+                products: [...state.products, newProductModel],
+              }));
+            })
+          );
+        })
+      )
+    ),
+    updateProduct: rxMethod<{ id: string | string; product: updateProduct }>(
+      pipe(
+        switchMap(({ id, product }) => {
+          const currentProducts = store.products();
+          const currentProduct = currentProducts.find((p) => p.id === id);
+          const currentReleaseDate = currentProduct?.releaseDate;
+
+          const payload = productService.buildUpdatePayload(id, product, currentReleaseDate);
+
+          return http.put<DataObject>(`${API_URL}/${id}`, payload).pipe(
+            tap((updatedProduct) => {
+              const transformed = productService.transformRawToProducts([updatedProduct])[0];
+              patchState(store, (state) => ({
+                products: state.products.map((p) => (p.id === id ? transformed : p)),
+              }));
+            })
+          );
+        })
+      )
+    ),
+    updateStatus: rxMethod<{ id: string }>(
+      pipe(
+        switchMap(({ id }) => {
+          const currentProducts = store.products();
+          const currentProduct = currentProducts.find((p) => p.id === id) as ProductModel;
+          const updateData = productService.statusUpdate(id, currentProduct);
+          return http.put<DataObject>(`${API_URL}/${id}`, updateData).pipe(
+            tap((updatedProduct) => {
+              const transformed = productService.transformRawToProducts([updatedProduct])[0];
+              patchState(store, (state) => ({
+                products: state.products.map((p) => (p.id === id ? transformed : p)),
+              }));
+            })
+          );
+        })
+      )
+    ),
   }))
 );
