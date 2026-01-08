@@ -50,6 +50,7 @@
     "@ngrx/store": "^21.0.1",
     "@ngrx/store-devtools": "^21.0.1",
     "@primeuix/themes": "^2.0.2",
+    "@tailwindcss/cli": "^4.1.18",
     "angular-i18next": "^20.0.1",
     "bootstrap": "^5.3.8",
     "crypto-js": "^4.2.0",
@@ -72,11 +73,12 @@
     "@types/express": "^5.0.1",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^20.17.19",
+    "autoprefixer": "^10.4.23",
     "jsdom": "^27.1.0",
     "less": "^4.2.0",
     "ng-packagr": "^21.0.0",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^4.1.12",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "typescript": "~5.9.2"
   }
 }

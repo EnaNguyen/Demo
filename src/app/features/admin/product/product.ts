@@ -29,22 +29,26 @@ type FilterState = {
     </button>
     <ngrx-product-filter
       [query]="productStore.searchQuery()"
-      [orderPrice]="productStore.sortOrder() ? productStore.sortOrder() : 'asc'"
-      [orderName]="productStore.sortOrder() ? productStore.sortOrder() : 'asc'"
+      [orderPrice]="productStore.sortPriceOrder() ? productStore.sortPriceOrder() : 'asc'"
+      [orderName]="productStore.sortNameOrder() ? productStore.sortNameOrder() : 'asc'"
       [dateReleaseBegin]="productStore.rangeDateFilter().min"
       [dateReleaseEnd]="productStore.rangeDateFilter().max"
       [priceRangeMin]="productStore.rangePriceFilter().min"
       [priceRangeMax]="productStore.rangePriceFilter().max"
       [brandSelected]="productStore.brandFilter()"
+      [currentPage]="productStore.pageNumber()"
+      [itemsPerPage]="productStore.itemPerPage()"
       (queryChange)="productStore.updateQuery($event)"
-      (orderPriceChange)="productStore.updateOrder('price', $event)"
-      (orderNameChange)="productStore.updateOrder('name', $event)"
+      (orderPriceChange)="productStore.updatePriceOrder($event)"
+      (orderNameChange)="productStore.updateNameOrder($event)"
       (releaseDateChange)="productStore.updateReleaseDateRange($event[0], $event[1])"
       (priceRangeChange)="productStore.updatePriceRange($event[0], $event[1])"
       (brandSelectedChange)="productStore.updateBrand($event)"
+      (currentPageChange)="productStore.updatePageNumber($event)"
+      (itemsPerPageChange)="productStore.updateItemsPerPage($event)"
     />
     <ngrx-pro-list
-      [product]="productStore.filteredProducts()"
+      [product]="productStore.paginationProduct()"
       [isLoading]="productStore.isLoading()"
     />
   `,
@@ -122,7 +126,7 @@ export class ProductComponent {
   openCreateModal() {
     const modalRef = this.modalService.open(CreateProductModal, {
       centered: true,
-      size: 'lg',
+      size: 'xl',
     });
 
     modalRef.result.then(

@@ -16,6 +16,9 @@ import { updateProduct } from '../product/model/product.model';
 import { HttpClient } from '@angular/common/http';
 import { DataObject } from './model/product.model';
 import { Data } from '@angular/router';
+import { access } from 'fs';
+import { Store } from '@ngrx/store';
+import { compileFunction } from 'vm';
 type FilterState = {
   name: string;
   target: string[];
@@ -29,11 +32,15 @@ type ProductSearchState = {
   products: ProductModel[];
   isLoading: boolean;
   filter: FilterState[];
+  activeSortTarget: string;
+  pageNumber: number;
+  itemPerPage: number;
 };
 
 const initialState: ProductSearchState = {
   products: [],
   isLoading: false,
+  activeSortTarget: '',
   filter: [
     {
       name: 'Search',
@@ -84,12 +91,14 @@ const initialState: ProductSearchState = {
       type: 'select',
     },
   ],
+  pageNumber: 1,
+  itemPerPage: 10,
 };
 const API_URL = 'http://localhost:3000/products';
 export const ProductStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
-  withComputed(({ products, filter }) => ({
+  withComputed(({ products, filter, activeSortTarget }) => ({
     brands: computed(() => {
       const brandSet = new Set<string>();
       products().forEach((product) => brandSet.add(product.brand));
@@ -97,6 +106,14 @@ export const ProductStore = signalStore(
     }),
     searchQuery: computed(() => filter().find((f) => f.type === 'search')?.query ?? ''),
     sortOrder: computed(() => filter().find((f) => f.type === 'sort')?.query ?? 'asc'),
+    sortNameOrder: computed(() => {
+      const sortFilter = filter().find((f) => f.type === 'sort' && f.target[0] === 'name');
+      return sortFilter?.query ?? 'asc';
+    }),
+    sortPriceOrder: computed(() => {
+      const sortFilter = filter().find((f) => f.type === 'sort' && f.target[0] === 'price');
+      return sortFilter?.query ?? 'asc';
+    }),
     rangeDateFilter: computed(() => {
       const dateFilter = filter().find((f) => f.type === 'dateRange');
       return {
@@ -137,14 +154,16 @@ export const ProductStore = signalStore(
         filtered = filtered.filter((product) => product.brand === brandFilter.query);
       }
       const sortFilter = filter().find((f) => f.type === 'sort');
-      const direction = sortFilter?.query === 'asc' ? 1 : -1;
-      if (sortFilter && sortFilter.target[0]) {
-        const target = sortFilter.target[0];
+
+      if (sortFilter) {
+        const currentTarget = activeSortTarget() as string;
+        const direction = sortFilter.query === 'asc' ? 1 : -1;
+
         filtered = filtered.toSorted((a: ProductModel, b: ProductModel) => {
-          if (target === 'name') {
+          if (currentTarget === 'name') {
             return direction * a.name.localeCompare(b.name);
           }
-          if (target === 'price') {
+          if (currentTarget === 'price') {
             return direction * (a.price - b.price);
           }
           return 0;
@@ -157,6 +176,20 @@ export const ProductStore = signalStore(
   withComputed((store) => ({
     productsCount: computed(() => store.filteredProducts().length),
   })),
+  withComputed((store)=>({
+    totalPages: computed(() => {
+      const totalItems = store.productsCount();
+      const itemsPerPage = store.itemPerPage();
+      return Math.ceil(totalItems/itemsPerPage)||1
+    }),
+    paginationProduct : computed(()=>{
+      const startIndex = (store.pageNumber()-1)&store.itemPerPage();
+      const endIndex = startIndex+ store.itemPerPage();
+      store.filteredProducts().slice(startIndex, endIndex)
+      return store.filteredProducts().slice(startIndex, endIndex)
+    })
+  })),
+        
   withMethods((store, productService = inject(ProductService), http = inject(HttpClient)) => ({
     loadProducts: rxMethod<string>(
       pipe(
@@ -188,6 +221,22 @@ export const ProductStore = signalStore(
         ),
       }));
     },
+    updateNameOrder(order: 'asc' | 'desc'): void {
+      patchState(store, (state) => ({
+        activeSortTarget: 'name',
+        filter: state.filter.map((f) =>
+          f.type === 'sort' && f.target[0] === 'name' ? { ...f, query: order } : f
+        ),
+      }));
+    },
+    updatePriceOrder(order: 'asc' | 'desc'): void {
+      patchState(store, (state) => ({
+        activeSortTarget: 'price',
+        filter: state.filter.map((f) =>
+          f.type === 'sort' && f.target[0] === 'price' ? { ...f, query: order } : f
+        ),
+      }));
+    },
     updateReleaseDateRange(min: string, max: string): void {
       console.log('Updating date range:', min, max);
       patchState(store, (state) => ({
@@ -204,6 +253,30 @@ export const ProductStore = signalStore(
       patchState(store, (state) => ({
         filter: state.filter.map((f) => (f.type === 'select' ? { ...f, query: brand } : f)),
       }));
+    },
+    updatePageNumber(pageNumber: number): void 
+    {
+      const total = store.totalPages();
+      const validPage = Math.max(1, Math.min(pageNumber,total))
+      patchState(store,{pageNumber:validPage});
+    },
+    updateItemsPerPage(itemPerPage: number ): void
+    {
+      patchState(store, {itemPerPage, pageNumber:1})
+    },
+    nextPage():void 
+    {
+      if(store.pageNumber()<store.totalPages())
+      {
+        patchState(store, {pageNumber:store.pageNumber()+1})
+      }
+    },
+    previousPage():void
+    {
+      if(store.pageNumber()>=2)
+      {
+        patchState(store,{pageNumber:store.pageNumber()-1})
+      }
     },
     createProduct: rxMethod<updateProduct>(
       pipe(

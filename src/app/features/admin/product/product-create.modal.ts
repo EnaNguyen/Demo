@@ -251,7 +251,6 @@ export class CreateProductModal {
   selectedFileName: string = '';
   previewImageUrl: string = '';
   isDragOver: boolean = false;
-
   onImageTypeChange() {
     if (this.imageType === 'url') {
       this.selectedFileName = '';
@@ -260,7 +259,6 @@ export class CreateProductModal {
       this.previewImageUrl = '';
     }
   }
-
   onImageUrlChange() {
     this.previewImageUrl = this.productForm.get('imageUrl')?.value || '';
   }

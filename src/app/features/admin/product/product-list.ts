@@ -35,7 +35,10 @@ import { FormatDatePipe } from './pipe/formatDate.pipe';
           </thead>
           <tbody>
             <tr
-              [ngClass]="'status-' + (product.quantity > 0 ? 'available' : 'out')"
+              [ngClass]="
+                'status-' +
+                (product.quantity >= 10 ? 'available' : product.quantity > 0 ? 'low' : 'out')
+              "
               *ngFor="let product of product"
             >
               <td class="col-id">{{ product.id }}</td>
@@ -44,7 +47,7 @@ import { FormatDatePipe } from './pipe/formatDate.pipe';
               </td>
               <td class="col-name">{{ product.name }}</td>
               <td class="col-brand">{{ product.brand }}</td>
-              <td class="col-date">{{ product.releaseDate | formatDate}}</td>
+              <td class="col-date">{{ product.releaseDate | formatDate }}</td>
               <td class="col-price">{{ product.price | formatPrice }}</td>
               <td class="col-quantity">
                 <span [ngClass]="product.quantity > 0 ? 'qty-available' : 'qty-empty'">
@@ -52,23 +55,19 @@ import { FormatDatePipe } from './pipe/formatDate.pipe';
                 </span>
               </td>
               <td class="col-status">
-                <span [ngClass]="'badge-' + product.status.toLowerCase().replace(/\\s+/g, '-')">
-                  @if(product.status === '1' && product.quantity > 10)
-                    {
-                      Đang Bán
-                    }
-                  @else if(product.status === '1' && product.quantity <= 10 && product.quantity > 0)
-                    {
-                      Sắp hết hàng
-                    }
-                  @else if(product.quantity== 0 && product.status === '1')
-                    {
-                      Hết Hàng
-                    }
-                  @else
-                    {
-                      Ngừng Bán
-                    }
+                <span
+                  [ngClass]="'badge-' +
+                    (product.status !== '1'
+                      ? 'stop'
+                      : product.quantity >= 10
+                      ? 'available'
+                      : product.quantity > 0
+                      ? 'low'
+                      : 'out')
+                  "
+                >
+                  @if (product.status !== '1') { Ngừng Bán } @else if (product.quantity >= 10) {
+                  Đang Bán } @else if (product.quantity > 0) { Sắp hết hàng } @else { Hết Hàng }
                 </span>
               </td>
               <td class="col-actions">
@@ -79,14 +78,7 @@ import { FormatDatePipe } from './pipe/formatDate.pipe';
                       Sửa
                     </button>
                     <button class="dropdown-item toggle" (click)="toggleProductStatus(product.id)">
-                      @if(product.status === '1')
-                        {
-                          Ngừng Bán
-                        }
-                      @else
-                        {
-                          Mở Bán
-                        }
+                      @if(product.status === '1') { Ngừng Bán } @else { Mở Bán }
                     </button>
                     <button class="dropdown-item delete">Xóa</button>
                   </div>
@@ -99,7 +91,7 @@ import { FormatDatePipe } from './pipe/formatDate.pipe';
     </div>
     <table></table>
   `,
-  styleUrls: ['./css/productTable.css'],
+  styleUrls: ['./css/testing.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class productList {
@@ -110,9 +102,9 @@ export class productList {
   openUpdateModal(product: ProductModel) {
     const modalRef = this.modalService.open(UpdateProductModal, {
       centered: true,
-      size: 'lg',
+      size: 'xl',
     });
-    console.log(product)
+    console.log(product);
     modalRef.componentInstance.product = product;
     modalRef.result.then(
       (result) => console.log('Updated:', result),
