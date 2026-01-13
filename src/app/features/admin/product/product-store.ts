@@ -19,6 +19,7 @@ import { Data } from '@angular/router';
 import { access } from 'fs';
 import { Store } from '@ngrx/store';
 import { compileFunction } from 'vm';
+import{ environment } from '../../../../environments/environment.development';
 type FilterState = {
   name: string;
   target: string[];
@@ -93,8 +94,8 @@ const initialState: ProductSearchState = {
   ],
   pageNumber: 1,
   itemPerPage: 10,
-};
-const API_URL = 'http://localhost:3000/products';
+  };
+const API_URL = `${environment.apiUrl}/product`;
 export const ProductStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
@@ -282,15 +283,22 @@ export const ProductStore = signalStore(
       pipe(
         switchMap((newProduct) => {
           const mappingData = productService.buildCreatePayload(newProduct);
-          return http.post<DataObject>(API_URL, mappingData).pipe(
-            tap((createdProduct) => {
-              console.log('Created Product:' + createdProduct);
-              const newProductModel: ProductModel =
-                productService.transformToProductModel(createdProduct);
-              patchState(store, (state) => ({
-                products: [...state.products, newProductModel],
-              }));
-            })
+          console.log('Create Payload:', mappingData);
+          const createUrl = `${API_URL}/AddNewProduct`;
+          return http.post<DataObject>(createUrl, mappingData).pipe(
+            tapResponse(
+              (createdProduct) => {
+                console.log('Created Product:', createdProduct);
+                const newProductModel: ProductModel =
+                  productService.transformToProductModel(createdProduct);
+                patchState(store, (state) => ({
+                  products: [...state.products, newProductModel],
+                }));
+              },
+              (error: any) => {
+                console.error('Error creating product:', error);
+              }
+            )
           );
         })
       )

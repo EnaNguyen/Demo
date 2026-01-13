@@ -56,85 +56,41 @@ export class ProductService {
       )
     );
   }
-  // checkboxesFilter(filters: { name: string; values: string[] }[]): Observable<ProductModel[]> {
-  //   return this.getProducts('').pipe(
-  //     map((products) => {
-  //       const activeFilters = filters.filter((f) => f.values.length > 0);
-  //       if (activeFilters.length === 0) {
-  //         return products;
-  //       }
-  //       return products.filter((product) => {
-  //         return activeFilters.every((filter) => {
-  //           if (filter.name === 'brand') {
-  //             return filter.values.includes(product.brand);
-  //           }
-  //           return true;
-  //         });
-  //       });
-  //     })
-  //   );
-  // }
-  // radioFilter(filter: { name: string; value: string }): Observable<ProductModel[]> {
-  //   return this.getProducts('').pipe(
-  //     map((products) => {
-  //       if (filter.name === 'status') {
-  //         return products.filter((product) => product.status === filter.value);
-  //       }
-  //       return products;
-  //     })
-  //   );
-  // }
-  // rangeFilter(filter: { name: string; min: string; max: string }): Observable<ProductModel[]> {
-  //   return this.getProducts('').pipe(
-  //     map((products) => {
-  //       if (filter.name === 'price') {
-  //         return products.filter(
-  //           (product) =>
-  //             product.price >= parseFloat(filter.min) && product.price <= parseFloat(filter.max)
-  //         );
-  //       } else {
-  //         return products.filter((product) => {
-  //           const productDate = this.parseDate(product.releaseDate);
-  //           if (!productDate) return false;
-  //           const minDate = this.parseDate(filter.min);
-  //           const maxDate = this.parseDate(filter.max);
-  //           if (!minDate && maxDate) {
-  //             return productDate <= maxDate;
-  //           }
-  //           if (minDate && !maxDate) {
-  //             return productDate >= minDate;
-  //           }
-  //           if (minDate && maxDate) {
-  //             return productDate >= minDate && productDate <= maxDate;
-  //           }
-  //           return true;
-  //         });
-  //       }
-  //     })
-  //   );
-  // }
   getPropertyValue(properties: Array<{ label: string; value: any }>, label: string): any {
     return properties?.find((p) => p.label === label)?.value ?? null;
   }
   buildCreatePayload(newProduct: updateProduct): any {
+    // Truyền dữ liệu đúng định dạng API: ProductCreateModel
     return {
-      key: Date.now(),
-      properties: [
-        { label: 'name', value: newProduct.name },
-        { label: 'price', value: newProduct.price },
-        {
-          label: 'releaseDate',
-          value: newProduct.releaseDate || new Date().toISOString().split('T')[0],
-        },
-        { label: 'brand', value: newProduct.brand },
-        { label: 'imageUrl', value: newProduct.imageUrl || newProduct.imageLocate || '' },
-        { label: 'description', value: newProduct.description || '' },
-        { label: 'quantity', value: newProduct.quantity },
-        { label: 'status', value: newProduct.status !== undefined ? Number(newProduct.status) : 1 },
-      ],
+      name: newProduct.name,
+      description: newProduct.description || '',
+      brand: newProduct.brand,
+      price: newProduct.price || 0,
+      quantity: newProduct.quantity || 0,
+      status: newProduct.status !== undefined ? Number(newProduct.status) : 1,
+      img: newProduct.imageUrl || newProduct.imageLocate || null,
     };
   }
   transformToProductModel(raw: any): ProductModel {
+    // Xử lý cả dữ liệu từ API thực và mock server
+    const isApiResponse = raw.name && raw.description; // Dữ liệu từ API thực
+    
+    if (isApiResponse) {
+      return {
+        id: raw.id || '',
+        key: raw.id || '',
+        name: raw.name || '',
+        description: raw.description || '',
+        price: Number(raw.price) || 0,
+        brand: raw.brand || '',
+        imageUrl: raw.img || raw.imageUrl || '',
+        quantity: Number(raw.quantity) || 0,
+        status: String(raw.status) || 'active',
+        releaseDate: raw.releaseDate || new Date().toISOString().split('T')[0],
+      };
+    }
+    
+    // Xử lý dữ liệu từ mock server (properties format)
     const properties = raw.properties || [];
     const getProp = (label: string) => {
       const prop = properties.find((p: PropertiesObject) => p.label === label);

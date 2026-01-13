@@ -23,9 +23,9 @@
   },
   "overrides": {
     "angular-i18next": {
-      "@angular/common": "$@angular/common",
-      "@angular/core": "$@angular/core",
-      "@angular/platform-browser": "$@angular/platform-browser"
+      "@angular/common": "^21.0.0",
+      "@angular/core": "^21.0.0",
+      "@angular/platform-browser": "^21.0.0"
     }
   },
   "private": true,
