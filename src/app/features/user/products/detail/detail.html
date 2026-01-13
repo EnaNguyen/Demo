@@ -1,56 +1,62 @@
-<div class="detail-wrapper" *ngIf="product() as productItem">
+<div class="detail-wrapper" *ngIf="product() as productItem; else notFound">
   <div class="breadcrumb">
     <a routerLink="/">Trang chủ</a>
     <span>/</span>
-    <span>{{ productItem.label }}</span>
+    <span>{{ productItem.name }}</span>
   </div>
 
   <div class="detail-container">
     <div class="product-gallery">
       <div class="main-image">
-        <img [src]="selectedImage" [alt]="productItem.label" />
+        <img 
+          [src]="selectedImage()" 
+          [alt]="productItem.name"
+          (error)="selectedImage.set('/assets/images/no-product.jpg')"
+        />
       </div>
     </div>
+
     <div class="product-info">
-      <h1 class="product-title">{{ productItem.label }}</h1>
-      
+      <h1 class="product-title">{{ productItem.name }}</h1>
+
       <div class="product-brand">
         <span class="brand-label">Thương hiệu:</span>
-        <span class="brand-name">{{ getPropertyValue(productItem, 'brand') }}</span>
+        <span class="brand-name">{{ productItem.brand || 'Không xác định' }}</span>
       </div>
 
       <div class="product-price">
-        <span class="price">{{ getPropertyValue(productItem, 'price') | formatPrice }}</span>
+        <span class="price">{{ productItem.price | formatPrice }}</span>
       </div>
 
       <div class="product-stock">
-        <span [class.in-stock]="getPropertyValue(productItem, 'quantity') > 0"
-              [class.out-of-stock]="getPropertyValue(productItem, 'quantity') <= 0">
-          {{ getPropertyValue(productItem, 'quantity') > 0 ? 'Còn hàng' : 'Hết hàng' }}
+        <span [class.in-stock]="productItem.quantity > 0"
+              [class.out-of-stock]="productItem.quantity <= 0">
+          {{ productItem.quantity > 0 ? 'Còn hàng' : 'Hết hàng' }}
         </span>
-        <p>Số lượng tối đa có thể thêm vào giỏ hàng: {{ getMaxQuantity() }}</p>
+        <p>Số lượng tối đa có thể thêm: {{ maxQuantity() }}</p>
         <span class="stock-quantity">
-          ({{ getPropertyValue(productItem, 'quantity') }} sản phẩm có sẵn)
+          ({{ productItem.quantity }} sản phẩm có sẵn)
         </span>
       </div>
 
-      <div class="quantity-section" *ngIf="getPropertyValue(productItem, 'quantity') > 0">
+      <div class="quantity-section" *ngIf="productItem.quantity > 0">
         <label>Số lượng:</label>
         <div class="quantity-control">
-          <button class="qty-btn" (click)="decreaseQuantity()" [disabled]="quantity <= 1">
+          <button class="qty-btn" (click)="decreaseQuantity()" [disabled]="quantity() <= 1">
             −
           </button>
-          <input type="number" [(ngModel)]="quantity" [max]="getPropertyValue(productItem, 'quantity')" min="1" readonly />
-          <button class="qty-btn" (click)="increaseQuantity()" 
-                  [disabled]="quantity >= getPropertyValue(productItem, 'quantity')">
+          <input type="number" [ngModel]="quantity()" readonly />
+          <button class="qty-btn" (click)="increaseQuantity()"
+                  [disabled]="quantity() >= maxQuantity()">
             +
           </button>
         </div>
       </div>
+
       <div class="action-buttons">
-        <button class="btn-add-cart" 
+        <button class="btn-add-cart"
                 (click)="addToCart()"
-                [disabled]="getPropertyValue(productItem, 'quantity') <= 0">
+                [disabled]="productItem.quantity <= 0 || maxQuantity() <= 0">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="9" cy="21" r="1"></circle>
             <circle cx="20" cy="21" r="1"></circle>
@@ -58,38 +64,41 @@
           </svg>
           Thêm vào giỏ hàng
         </button>
-        
       </div>
+
       <div class="product-details">
         <h3>Thông tin chi tiết</h3>
         <div class="detail-row">
           <span class="detail-label">Ngày phát hành:</span>
-          <span class="detail-value">{{ getPropertyValue(productItem, 'releaseDate') | formatDate }}</span>
+          <span class="detail-value">{{ productItem.releaseDate | formatDate }}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Mã sản phẩm:</span>
-          <span class="detail-value">{{ productItem.key }}</span>
+          <span class="detail-value">{{ productItem.id }}</span>
         </div>
       </div>
     </div>
   </div>
+
   <div class="description-section">
     <h2>Mô tả sản phẩm</h2>
     <div class="description-content">
-      {{ getPropertyValue(productItem, 'description') || 'Chưa có mô tả cho sản phẩm này.' }}
+      {{ productItem.description || 'Chưa có mô tả cho sản phẩm này.' }}
     </div>
   </div>
 </div>
 
-<div class="not-found" *ngIf="!product()">
-  <div class="not-found-content">
-    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="12"></line>
-      <line x1="12" y1="16" x2="12.01" y2="16"></line>
-    </svg>
-    <h2>Sản phẩm không tồn tại</h2>
-    <p>Rất tiếc, chúng tôi không tìm thấy sản phẩm bạn đang tìm kiếm.</p>
-    <a routerLink="/" class="btn-back-home">Quay lại trang chủ</a>
+<ng-template #notFound>
+  <div class="not-found">
+    <div class="not-found-content">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <h2>Sản phẩm không tồn tại</h2>
+      <p>Rất tiếc, chúng tôi không tìm thấy sản phẩm bạn đang tìm kiếm.</p>
+      <a routerLink="/" class="btn-back-home">Quay lại trang chủ</a>
+    </div>
   </div>
-</div>
+</ng-template>

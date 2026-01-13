@@ -106,15 +106,16 @@ export class CreateProductComponent {
 
   onSubmit(): void {
     if (this.productForm.valid) {
-      const newProduct: updateProduct = {
+      const newProduct = {
+        id: 0,
         name: this.productForm.value.name,
         brand: this.productForm.value.brand,
         quantity: this.productForm.value.quantity,
         status: Number(this.productForm.value.status),
         price: this.productForm.value.price,
-        imageUrl: this.imageType === 'url' ? this.productForm.value.imageUrl : undefined,
-        imageLocate: this.imageType === 'file' ? this.selectedFileName : undefined,
-        description: this.productForm.value.description || ''
+        description: this.productForm.value.description || '',
+        releaseDate: this.productForm.value.releaseDate || new Date().toISOString().split('T')[0],
+        img: this.imageType === 'url' ? this.productForm.value.imageUrl : null
       };
       try {
         this.productStore.createProduct(newProduct);

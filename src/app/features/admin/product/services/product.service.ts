@@ -4,9 +4,10 @@ import { ProductModel } from '../model/product.model';
 import { filter, map, Observable } from 'rxjs';
 import { updateProduct } from '../model/product.model';
 import { DataObject, PropertiesObject } from '../model/product.model';
+import { environment } from '../../../../../environments/environment.development';
 @Injectable({ providedIn: 'root' })
 export class ProductService {
-  private readonly apiUrl = 'http://localhost:3000/products';
+  private readonly apiUrl = environment.apiUrl + '/product';
   constructor(private http: HttpClient) {}
   private parseDate(dateStr: string): Date | null {
     if (!dateStr) return null;
@@ -17,32 +18,22 @@ export class ProductService {
     return date;
   }
   getProducts(filter: string = ''): Observable<ProductModel[]> {
-    const url = filter ? `${this.apiUrl}?filter=${filter}` : this.apiUrl;
+    const url = filter ? `${this.apiUrl}/ProductList?name=${filter}` : `${this.apiUrl}/ProductList`;
 
     return this.http.get<any[]>(url).pipe(
       map((response: any[]) => {
-        return response.map((item: any) => {
-          const props = item.properties as { label: string; value: any }[];
-
-          const getValue = (label: string): any => {
-            return props
-              .filter((p: { label: string; value: any }) => p.label === label)
-              .map((p: { label: string; value: any }) => p.value)[0];
-          };
-
-          return {
-            id: item.id,
-            key: item.key,
-            name: getValue('name') || '',
-            description: getValue('description') || '',
-            price: Number(getValue('price') || 0),
-            brand: getValue('brand') || '',
-            imageUrl: getValue('imageUrl') || '',
-            quantity: Number(getValue('quantity') || 0),
-            status: getValue('status')?.toString() || '0',
-            releaseDate: getValue('releaseDate') || '',
-          } as ProductModel;
-        });
+        return response.map((item: any) => ({
+        id: item.id || 0,
+        key: item.id || '',            
+        name: item.name || '',
+        description: item.description || '',
+        price: Number(item.price) || 0,
+        brand: item.brand || '',
+        imageUrl: item.img || item.imageUrl || '', 
+        quantity: Number(item.quantity) || 0,
+        status: String(item.status ?? 1),     
+        releaseDate: item.releaseDate || '',
+      } as ProductModel));
       })
     );
   }
@@ -60,7 +51,6 @@ export class ProductService {
     return properties?.find((p) => p.label === label)?.value ?? null;
   }
   buildCreatePayload(newProduct: updateProduct): any {
-    // Truyền dữ liệu đúng định dạng API: ProductCreateModel
     return {
       name: newProduct.name,
       description: newProduct.description || '',
@@ -72,9 +62,7 @@ export class ProductService {
     };
   }
   transformToProductModel(raw: any): ProductModel {
-    // Xử lý cả dữ liệu từ API thực và mock server
-    const isApiResponse = raw.name && raw.description; // Dữ liệu từ API thực
-    
+    const isApiResponse = raw.name && raw.description;    
     if (isApiResponse) {
       return {
         id: raw.id || '',
@@ -89,8 +77,6 @@ export class ProductService {
         releaseDate: raw.releaseDate || new Date().toISOString().split('T')[0],
       };
     }
-    
-    // Xử lý dữ liệu từ mock server (properties format)
     const properties = raw.properties || [];
     const getProp = (label: string) => {
       const prop = properties.find((p: PropertiesObject) => p.label === label);

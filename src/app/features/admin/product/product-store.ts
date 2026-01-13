@@ -19,7 +19,7 @@ import { Data } from '@angular/router';
 import { access } from 'fs';
 import { Store } from '@ngrx/store';
 import { compileFunction } from 'vm';
-import{ environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment.development';
 type FilterState = {
   name: string;
   target: string[];
@@ -94,8 +94,8 @@ const initialState: ProductSearchState = {
   ],
   pageNumber: 1,
   itemPerPage: 10,
-  };
-const API_URL = `${environment.apiUrl}/product`;
+};
+const API_URL = `${environment.apiUrl}/Product`;
 export const ProductStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
@@ -177,20 +177,20 @@ export const ProductStore = signalStore(
   withComputed((store) => ({
     productsCount: computed(() => store.filteredProducts().length),
   })),
-  withComputed((store)=>({
+  withComputed((store) => ({
     totalPages: computed(() => {
       const totalItems = store.productsCount();
       const itemsPerPage = store.itemPerPage();
-      return Math.ceil(totalItems/itemsPerPage)||1
+      return Math.ceil(totalItems / itemsPerPage) || 1;
     }),
-    paginationProduct : computed(()=>{
-      const startIndex = (store.pageNumber()-1)&store.itemPerPage();
-      const endIndex = startIndex+ store.itemPerPage();
-      store.filteredProducts().slice(startIndex, endIndex)
-      return store.filteredProducts().slice(startIndex, endIndex)
-    })
+    paginationProduct: computed(() => {
+      const startIndex = (store.pageNumber() - 1) & store.itemPerPage();
+      const endIndex = startIndex + store.itemPerPage();
+      store.filteredProducts().slice(startIndex, endIndex);
+      return store.filteredProducts().slice(startIndex, endIndex);
+    }),
   })),
-        
+
   withMethods((store, productService = inject(ProductService), http = inject(HttpClient)) => ({
     loadProducts: rxMethod<string>(
       pipe(
@@ -255,28 +255,22 @@ export const ProductStore = signalStore(
         filter: state.filter.map((f) => (f.type === 'select' ? { ...f, query: brand } : f)),
       }));
     },
-    updatePageNumber(pageNumber: number): void 
-    {
+    updatePageNumber(pageNumber: number): void {
       const total = store.totalPages();
-      const validPage = Math.max(1, Math.min(pageNumber,total))
-      patchState(store,{pageNumber:validPage});
+      const validPage = Math.max(1, Math.min(pageNumber, total));
+      patchState(store, { pageNumber: validPage });
     },
-    updateItemsPerPage(itemPerPage: number ): void
-    {
-      patchState(store, {itemPerPage, pageNumber:1})
+    updateItemsPerPage(itemPerPage: number): void {
+      patchState(store, { itemPerPage, pageNumber: 1 });
     },
-    nextPage():void 
-    {
-      if(store.pageNumber()<store.totalPages())
-      {
-        patchState(store, {pageNumber:store.pageNumber()+1})
+    nextPage(): void {
+      if (store.pageNumber() < store.totalPages()) {
+        patchState(store, { pageNumber: store.pageNumber() + 1 });
       }
     },
-    previousPage():void
-    {
-      if(store.pageNumber()>=2)
-      {
-        patchState(store,{pageNumber:store.pageNumber()-1})
+    previousPage(): void {
+      if (store.pageNumber() >= 2) {
+        patchState(store, { pageNumber: store.pageNumber() - 1 });
       }
     },
     createProduct: rxMethod<updateProduct>(
@@ -303,22 +297,31 @@ export const ProductStore = signalStore(
         })
       )
     ),
-    updateProduct: rxMethod<{ id: string | string; product: updateProduct }>(
+    updateProduct: rxMethod<{ id: string; product: updateProduct }>(
       pipe(
         switchMap(({ id, product }) => {
-          const currentProducts = store.products();
-          const currentProduct = currentProducts.find((p) => p.id === id);
-          const currentReleaseDate = currentProduct?.releaseDate;
-
-          const payload = productService.buildUpdatePayload(id, product, currentReleaseDate);
-
-          return http.put<DataObject>(`${API_URL}/${id}`, payload).pipe(
-            tap((updatedProduct) => {
-              const transformed = productService.transformRawToProducts([updatedProduct])[0];
-              patchState(store, (state) => ({
-                products: state.products.map((p) => (p.id === id ? transformed : p)),
-              }));
-            })
+          const payload = {
+            name: product.name,
+            description: product.description,
+            brand: product.brand,
+            status: product.status,
+            price: product.price,
+            quantity: product.quantity,
+            img: product.imageUrl ? product.imageUrl : product.imageLocate,
+          };
+          console.log('Update Payload:', payload);
+          return http.put<DataObject>(`${API_URL}/EditProduct?id=${id}`, payload ).pipe(
+            tapResponse(
+              (updatedProduct) => {
+                const transformed = productService.transformRawToProducts([updatedProduct])[0];
+                patchState(store, (state) => ({
+                  products: state.products.map((p) => (p.id === id ? transformed : p)),
+                }));
+              },
+              (error: any) => {
+                console.error('Error updating product:', error);
+              }
+            )
           );
         })
       )

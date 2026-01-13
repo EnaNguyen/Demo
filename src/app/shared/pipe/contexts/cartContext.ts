@@ -8,53 +8,14 @@ import { CartPersonalView, CartDetailPersonalView } from '../../data/viewModels/
 import { AddItemToCartModel } from '../../data/createModels/cartAdding';
 import { AuthorizeContext } from './authorizeContext';
 import { computed } from '@angular/core';
-
+import { environment } from '../../../../environments/environment';
 const initialCartState: CartPersonalView = {
   id: undefined,
   items: [],
   totalPrice: 0,
-  userId: 1,
+  userId: 0,
 };
-
-function updateCartOnServer(
-  items: CartDetailPersonalView[],
-  totalPrice: number,
-  cartId: number | undefined,
-  userId: number,
-  http: HttpClient,
-  platformId: Object
-): void {
-  if (!isPlatformBrowser(platformId)) return;
-
-  const state = { id: cartId, userId, items, totalPrice };
-  localStorage.setItem('carts', JSON.stringify(state));
-
-  items.forEach((item) => {
-    http.put(`http://localhost:3000/cartItems/${item.id}`, {
-      id: item.id,
-      detailId: item.id,
-      cartId: item.cartId,
-      productId: item.productId,
-      quantity: item.quantity,
-      price: item.price,
-    }).subscribe({
-      next: () => {},
-      error: (error) => console.error('Error updating cart item:', error),
-    });
-  });
-
-  if (cartId) {
-    http.put(`http://localhost:3000/carts/${cartId}`, {
-      id: cartId,
-      cartId: cartId,
-      userId: userId,
-      totalPrice: totalPrice,
-    }).subscribe({
-      next: () => console.log('Cart updated successfully'),
-      error: (error) => console.error('Error updating cart:', error),
-    });
-  }
-}
+const API_URL = environment.apiUrl+"/Cart";
 
 export const CartStore = signalStore(
   { providedIn: 'root' },
@@ -65,56 +26,45 @@ export const CartStore = signalStore(
     const platformId = inject(PLATFORM_ID);
 
     return {
-      loadCart: rxMethod<number>((userId$) =>
+      loadCart: rxMethod<string | number>((userId$) =>
         userId$.pipe(
           switchMap((userId) =>
-            http.get<any>('http://localhost:3000/carts').pipe(
-              switchMap((carts) => {
-                const userCart = carts.find((c: any) => c.userId.toString() === userId.toString());
-                if (!userCart) {
+            http.get<any>(`${API_URL}/GetCartList?id=${encodeURIComponent(userId.toString())}`).pipe(
+              tap((response) => {
+                const userCart = response;
+                console.log('Loaded cart data:', userCart);
+                if (!userCart || !userCart.details) {
+                  const userIdNum = typeof userId === 'string' ? parseInt(userId, 10) : userId;
                   patchState(store, {
                     id: undefined,
-                    userId: userId,
+                    userId: userIdNum,
                     items: [],
                     totalPrice: 0,
                   } as CartPersonalView);
-                  return of(null);
+                } else {
+                  const items = userCart.details.map((item: any) => ({
+                    id: item.productId,
+                    detailId: item.id,
+                    cartId: userCart.id,
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    price: item.price,
+                  }));
+                  
+                  patchState(store, {
+                    id: userCart.id,
+                    userId: userCart.userId,
+                    items: items,
+                    totalPrice: userCart.totalPrice,
+                  } as CartPersonalView);
+                  
+                  if (isPlatformBrowser(platformId)) {
+                    localStorage.setItem('carts', JSON.stringify(getState(store)));
+                  }
                 }
-                return http.get<any>('http://localhost:3000/cartItems').pipe(
-                  tap((cartItems) => {
-                    let items = cartItems
-                      .filter((ci: any) => ci.cartId.toString() === userCart.cartId.toString())
-                      .map((item: any) => ({
-                        id: item.id,
-                        detailId: item.id,
-                        cartId: item.cartId,
-                        productId: item.productId,
-                        quantity: item.quantity,
-                        price: item.price,
-                      }));
-                    
-                    if (!items || items.length === 0) {
-                      items = [];
-                    }                   
-                    const totalPrice = items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
-                    patchState(store, {
-                      id: userCart.id,
-                      userId: userCart.userId,
-                      items: items,
-                      totalPrice: totalPrice,
-                    } as CartPersonalView);
-                    if (isPlatformBrowser(platformId)) {
-                      localStorage.setItem('carts', JSON.stringify(getState(store)));
-                    }
-                  }),
-                  catchError((err) => {
-                    console.error('Failed to load cart items', err);
-                    return of(null);
-                  })
-                );
               }),
               catchError((err) => {
-                console.error('Failed to load carts', err);
+                console.error('Failed to load cart', err);
                 return of(null);
               })
             )
@@ -122,109 +72,142 @@ export const CartStore = signalStore(
         )
       ),
 
-      increaseQuantity(itemId: number, maxQuantity: number): void {
+      increaseQuantity(itemId: number): void {
         const state = getState(store);
+        const user = auth.getUser();
         const item = state.items?.find((i) => i.id === itemId);
-        if (item && item.quantity < maxQuantity) {
-          const updatedItems = state.items!.map((i) =>
-            i.id === itemId ? { ...i, quantity: i.quantity + 1 } : i
-          );
-          const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-          patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
-          updateCartOnServer(updatedItems, totalPrice, state.id, state.userId, http, platformId);
+        
+        if (item && user) {
+          http.put<any>(`${API_URL}/IncreaseAmount?userId=${encodeURIComponent(user.id)}&productId=${item.productId}`, {}).pipe(
+            tap((response) => {
+              if (response && response.details) {
+                const updatedItems = response.details.map((detail: any) => ({
+                  id: detail.productId,
+                  detailId: detail.id,
+                  cartId: response.id,
+                  productId: detail.productId,
+                  quantity: detail.quantity,
+                  price: detail.price,
+                }));
+                
+                patchState(store, {
+                  items: updatedItems,
+                  totalPrice: response.totalPrice,
+                } as CartPersonalView);
+              }
+            }),
+            catchError((error) => {
+              console.error('Error increasing quantity:', error);
+              return of(null);
+            })
+          ).subscribe();
         }
       },
 
       decreaseQuantity(itemId: number): void {
         const state = getState(store);
+        const user = auth.getUser();
         const item = state.items?.find((i) => i.id === itemId);
-        if (item && item.quantity > 1) {
-          const updatedItems = state.items!.map((i) =>
-            i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i
-          );
-          const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-          patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
-          updateCartOnServer(updatedItems, totalPrice, state.id, state.userId, http, platformId);
+        
+        if (item && user) {
+          http.put<any>(`${API_URL}/DecreaseAmount?userId=${encodeURIComponent(user.id)}&productId=${item.productId}`, {}).pipe(
+            tap((response) => {
+              if (response && response.details) {
+                const updatedItems = response.details.map((detail: any) => ({
+                  id: detail.productId,
+                  detailId: detail.id,
+                  cartId: response.id,
+                  productId: detail.productId,
+                  quantity: detail.quantity,
+                  price: detail.price,
+                }));
+                
+                patchState(store, {
+                  items: updatedItems,
+                  totalPrice: response.totalPrice,
+                } as CartPersonalView);
+              }
+            }),
+            catchError((error) => {
+              console.error('Error decreasing quantity:', error);
+              return of(null);
+            })
+          ).subscribe();
         }
       },
 
       removeItem(itemId: number): void {
         const state = getState(store);
-        const updatedItems = state.items!.filter((i) => i.id !== itemId);
-        const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-        patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
+        const user = auth.getUser();
+        const item = state.items?.find((i) => i.id === itemId);
         
-        if (isPlatformBrowser(platformId)) {
-          http.delete(`http://localhost:3000/cartItems/${itemId}`).pipe(
-            tap(() => {
-              const finalState = getState(store);
-              updateCartOnServer(finalState.items || [], finalState.totalPrice, finalState.id, finalState.userId, http, platformId);
+        if (item && user) {
+          http.delete<any>(`${API_URL}/RemoveCartItems?userId=${encodeURIComponent(user.id)}&productId=${item.productId}`).pipe(
+            tap((response) => {
+              if (response && response.details) {
+                const updatedItems = response.details.map((detail: any) => ({
+                  id: detail.productId,
+                  detailId: detail.id,
+                  cartId: response.id,
+                  productId: detail.productId,
+                  quantity: detail.quantity,
+                  price: detail.price,
+                }));
+                
+                patchState(store, {
+                  items: updatedItems,
+                  totalPrice: response.totalPrice,
+                } as CartPersonalView);
+              }
             }),
             catchError((error) => {
               console.error('Error deleting cart item:', error);
               return of(null);
             })
-          ).subscribe({
-            next: () => {
-              console.log('CartItem xóa thành công');
-            }
-          });
+          ).subscribe();
         }
       },
 
       addItemToCart(newItem: AddItemToCartModel): void {
-        const state = getState(store);
-        const existingItem = state.items?.find((item) => item.productId === newItem.cartDetailId);
-
-        if (existingItem) {
-          const updatedItems = state.items!.map((item) =>
-            item.productId === newItem.cartDetailId
-              ? { ...item, quantity: item.quantity + newItem.quantity }
-              : item
-          );
-          const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-          patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
-          console.log("cập nhật", updatedItems);
-          updateCartOnServer(updatedItems, totalPrice, state.id, state.userId, http, platformId);
-        } else {
-          const productPrice = newItem.price || 0;
-          const newCartItem: CartDetailPersonalView = {
-            id: new Date().getTime(),
-            cartId: state.id || 1,
-            productId: newItem.cartDetailId || 0,
-            quantity: newItem.quantity,
-            price: productPrice,
-          };
-          const currentState = getState(store);
-          const updatedItems = [...(currentState.items || []), newCartItem];
-          const totalPrice = updatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-          patchState(store, { items: updatedItems, totalPrice } as CartPersonalView);
-          
-          if (isPlatformBrowser(platformId)) {
-            http.post(`http://localhost:3000/cartItems`, {
-              id: newCartItem.id,
-              detailId: newCartItem.id,
-              cartId: newCartItem.cartId,
-              productId: newCartItem.productId,
-              quantity: newCartItem.quantity,
-              price: newCartItem.price,
-            }).pipe(
-              tap(() => {
-                const finalState = getState(store);
-                updateCartOnServer(finalState.items || [], finalState.totalPrice, finalState.id, finalState.userId, http, platformId);
-              }),
-              catchError((error) => {
-                console.error('Error adding item to cart:', error);
-                return of(null);
-              })
-            ).subscribe({
-              next: (response) => {
-                if (response) {
-                  console.log('CartItem tạo mới thành công:', response);
-                }
+        const user = auth.getUser();
+        
+        if (user) {
+          const productId = newItem.cartDetailId || 0;
+          const quantity = newItem.quantity;
+          console.log('Adding item to cart:', { user, productId, quantity });
+          http.post<any>(
+            `${API_URL}/AddItemToCart?username=${encodeURIComponent(user)}&productId=${productId}&quantity=${quantity}`,
+            {}
+          ).pipe(
+            tap((response) => {
+              if (response && response.details) {
+                const updatedItems = response.details.map((detail: any) => ({
+                  id: detail.productId,
+                  detailId: detail.id,
+                  cartId: response.id,
+                  productId: detail.productId,
+                  quantity: detail.quantity,
+                  price: detail.price,
+                }));
+                
+                patchState(store, {
+                  id: response.id,
+                  userId: response.userId,
+                  items: updatedItems,
+                  totalPrice: response.totalPrice,
+                } as CartPersonalView);
+                
+                if (isPlatformBrowser(platformId)) {
+                  localStorage.setItem('carts', JSON.stringify(getState(store)));
+                }             
+                console.log('Item added to cart successfully');
               }
-            });
-          }
+            }),
+            catchError((error) => {
+              console.error('Error adding item to cart:', error);
+              return of(null);
+            })
+          ).subscribe();
         }
       },
     };
@@ -247,6 +230,7 @@ export const CartStore = signalStore(
       const auth = inject(AuthorizeContext);
       const platformId = inject(PLATFORM_ID);
       const user = auth.getUser();
+      
       if (user && user.id) {
         const storeTyped = store as any;
         storeTyped.loadCart(user.id);
@@ -256,6 +240,7 @@ export const CartStore = signalStore(
         const checkUserInterval = setInterval(() => {
           const currentUser = auth.getUser();
           const currentState = getState(store);
+          
           if (currentUser && currentUser.id && currentState.userId !== currentUser.id) {
             console.log('User changed, reloading cart for user:', currentUser.id);
             const storeTyped = store as any;
@@ -265,14 +250,16 @@ export const CartStore = signalStore(
             console.log('User logged out, clearing cart');
             patchState(store, {
               id: undefined,
-              userId: 1,
+              userId: 0,
               items: [],
               totalPrice: 0,
             } as CartPersonalView);
           }
         }, 500);
+        
         return () => clearInterval(checkUserInterval);
       }
+      
       return undefined;
     },
   })

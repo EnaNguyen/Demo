@@ -1,132 +1,155 @@
 <div class="container">
   <!-- Page Header -->
   <div class="page-header">
-    <h1 style="font-size: 2rem; height: 70px; padding: 30px 10px 10px 10px">{{ 'userProduct.title' | translate }}</h1>
-    <button class="filter-toggle-btn" (click)="toggleFilter()">
-      <span>
-        @if (showFilter()) {
-          {{ 'userProduct.hideFilter' | translate }}
-        } @else {
-          {{ 'userProduct.showFilter' | translate }}
+    <h1 style="font-size: 2rem; height: 70px; padding: 30px 10px 10px 10px">
+      {{ 'userProduct.title' | translate }}
+    </h1>
+  </div>
+  <ngrx-product-filter
+    [query]="searchQuery()"
+    (queryChange)="onQueryChange($event)"
+
+    [orderPrice]="sortPriceOrder()"
+    (orderPriceChange)="onOrderPriceChange($event)"
+
+    [orderName]="sortNameOrder()"
+    (orderNameChange)="onOrderNameChange($event)"
+
+    [dateReleaseBegin]="rangeDateFilter().min"
+    [dateReleaseEnd]="rangeDateFilter().max"
+    (releaseDateChange)="onReleaseDateChange($event)"
+
+    [priceRangeMin]="rangePriceFilter().min"
+    [priceRangeMax]="rangePriceFilter().max"
+    (priceRangeChange)="onPriceRangeChange($event)"
+
+    [brandSelected]="brandFilter()"
+    (brandSelectedChange)="onBrandChange($event)"
+
+    [itemsPerPage]="itemsPerPage()"
+    (itemsPerPageChange)="onItemsPerPageChange($event)"
+
+    [currentPage]="currentPage()"
+    (currentPageChange)="onCurrentPageChange($event)"
+  ></ngrx-product-filter>
+
+  <!-- Loading state -->
+  <div class="loading" *ngIf="isLoading()">
+    <p>Đang tải danh sách sản phẩm...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading()">
+    <div class="pagination-section">
+      <div class="pagination-info">
+        <span>
+          {{ 'show' | translate }}
+          <strong>{{ (pageNumber() - 1) * itemPerPage() + 1 }}</strong> -
+          <strong>{{ Math.min(pageNumber() * itemPerPage(), productsCount()) }}</strong>
+          {{ 'in' | translate }} <strong>{{ productsCount() }}</strong> {{ 'products' | translate }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Danh sách sản phẩm -->
+    <div class="product-container">
+      @if (products().length === 0) {
+        <div class="no-products">
+          <p>Không tìm thấy sản phẩm nào phù hợp với bộ lọc hiện tại</p>
+        </div>
+      } @else {
+        @for (product of products(); track product.id) {
+          <div class="product-card">
+            <div class="product-image-container">
+              <img
+                [src]="getProductImage(product)"
+                [alt]="product.name"
+                class="product-image"
+                (error)="onImageError($event)"
+              />
+            </div>
+
+            <div class="product-header">
+              <h2 class="product-name">{{ product.name }}</h2>
+            </div>
+
+            <div class="product-body">
+              <div class="product-info">
+                <span class="info-label">Ngày phát hành:</span>
+                <span class="info-value">{{ product.releaseDate | formatDate }}</span>
+              </div>
+
+              <div class="product-info">
+                <span class="info-label">Giá:</span>
+                <span class="info-value price">{{ product.price | formatPrice }}</span>
+              </div>
+
+              <div class="product-info">
+                <span class="info-label">Hãng:</span>
+                <span class="info-value">{{ product.brand || 'Không xác định' }}</span>
+              </div>
+
+              <div class="product-info">
+                <span class="info-label">Tồn kho:</span>
+                <span class="info-value">{{ product.quantity }}</span>
+              </div>
+            </div>
+
+            <div class="product-footer">
+              <button
+                class="btn-detail"
+                (click)="viewDetail(product)"
+                [disabled]="product.status !== '1'"
+                [ngClass]="getStatusClass(product)"
+              >
+                @if (product.status === '1') {
+                  {{ 'userProduct.detail' | translate }}
+                } @else {
+                  {{ 'userProduct.paused' | translate }}
+                }
+              </button>
+            </div>
+          </div>
         }
-      </span>
-    </button>
-  </div>
-  <!-- Filter Section -->
-  @if (showFilter()) {
-  <div class="filter-section show">
-    <h2>Bộ Lọc</h2>
-    <div class="filters-container">
-      @for (filter of filterConfig().request; track filter.title) { @if (filter.type !== 'page') {
-      <app-filter-wrapper [filterOption]="filter" (filterChange)="onFilterChange($event)">
-      </app-filter-wrapper>
-      } }
+      }
     </div>
-  </div>
-  }
 
-  <!-- Pagination Info Top -->
-  <div class="pagination-section">
-    <div class="pagination-info">
-      <span>
-        {{ 'show' | translate }}
-        <strong>{{ (currentPage() - 1) * pageSize() + 1 }}</strong> -
-        <strong>{{ Math.min(currentPage() * pageSize(), totalItems()) }}</strong>
-        {{'in' | translate}} <strong>{{ totalItems() }}</strong> {{'products' | translate }}
-      </span>
-    </div>
-  </div>
-
-  <!-- Product Grid -->
-  <div class="product-container">
-    @if (displayedProducts().length === 0) {
-    <div class="no-products">
-      <p>Không tìm thấy sản phẩm phù hợp với bộ lọc</p>
-    </div>
-    } @for (product of displayedProducts(); track product.key ?? product.id) {
-    <div class="product-card">
-      <div class="product-image-container">
-        @if (getPropertyValue(product, 'imageUrl')) {
-        <img
-          [src]="getPropertyValue(product, 'imageUrl')"
-          [alt]="product.label"
-          class="product-image"
-          (error)="onImageError($event)"
-        />
-        } @else {
-        <div class="product-image-placeholder">No Image</div>
-        }
-      </div>
-
-      <div class="product-header">
-        <h2 class="product-name">{{ product.label }}</h2>
-      </div>
-
-      <div class="product-body">
-        <div class="product-info">
-          <span class="info-label">Ngày phát hành:</span>
-          <span class="info-value">{{ formatDate(getPropertyValue(product, 'releaseDate')) }}</span>
+    <!-- Pagination Bottom -->
+    <div class="pagination-bottom" *ngIf="totalPages() > 1">
+      <div class="pagination-bottom-content">
+        <div class="page-size-selector">
+          <label>Sản phẩm/trang:</label>
+          <select
+            [value]="itemPerPage()"
+            (change)="onItemsPerPageChange(+$any($event.target).value)"
+            class="page-size-select"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
         </div>
 
-        <div class="product-info">
-          <span class="info-label">Giá:</span>
-          <span class="info-value price">{{
-            formatPrice(getPropertyValue(product, 'price'))
-          }}</span>
+        <div class="pagination-buttons">
+          <button 
+            (click)="previousPage()" 
+            [disabled]="pageNumber() <= 1" 
+            class="pagination-btn"
+          >
+            ← Trước
+          </button>
+          <span class="page-indicator">
+            Trang {{ pageNumber() }} / {{ totalPages() }}
+          </span>
+          <button 
+            (click)="nextPage()" 
+            [disabled]="pageNumber() >= totalPages()" 
+            class="pagination-btn"
+          >
+            Sau →
+          </button>
         </div>
-
-        <div class="product-info">
-          <span class="info-label">Hãng:</span>
-          <span class="info-value">{{ getPropertyValue(product, 'brand') }}</span>
-        </div>
-      </div>
-
-      <div class="product-footer">
-        <button
-          class="btn-detail"
-          (click)="viewDetail(product)"
-          [disabled]="getPropertyValue(product, 'status') != 1"
-          [class]="getStatusClass(product)"
-        >
-          @if (getPropertyValue(product, 'status') == 1) {
-          {{ 'userProduct.detail' | translate }}
-          } @else {
-          {{ 'userProduct.paused' | translate }}
-          }
-        </button>
       </div>
     </div>
-    }
-  </div>
-
-  <div class="pagination-bottom">
-    <div class="pagination-bottom-content">
-      <div class="page-size-selector">
-        <label>Sản phẩm/trang:</label>
-        <select
-          [value]="pageSize()"
-          (change)="onPageSizeChange($any($event.target).value)"
-          class="page-size-select"
-        >
-          @for (size of pageSizeOptions; track size) {
-          <option [value]="size">{{ size }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="pagination-buttons">
-        <button (click)="previousPage()" [disabled]="currentPage() <= 1" class="pagination-btn">
-          ← Trước
-        </button>
-        <span class="page-indicator">Trang {{ currentPage() }} / {{ totalPages() }}</span>
-        <button
-          (click)="nextPage()"
-          [disabled]="currentPage() >= totalPages()"
-          class="pagination-btn"
-        >
-          Sau →
-        </button>
-      </div>
-    </div>
-  </div>
+  </ng-container>
 </div>

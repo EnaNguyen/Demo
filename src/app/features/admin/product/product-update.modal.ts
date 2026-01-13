@@ -265,7 +265,6 @@ export class UpdateProductModal {
   }
 
   private initForm(): void {
-    console.log(this.product);
     this.productForm = this.fb.group({
       name: ['', Validators.required],
       price: [0, [Validators.required, Validators.min(1)]],
@@ -389,6 +388,7 @@ export class UpdateProductModal {
         price: this.productForm.value.price,
         imageUrl: this.imageType === 'url' ? this.productForm.value.imageUrl : undefined,
         imageLocate: this.imageType === 'file' ? this.selectedFileName : undefined,
+        description: this.productForm.value.description,
       };
       try {
         this.productStore.updateProduct({

@@ -1,192 +1,154 @@
-import { signalStore, withState, withMethods, patchState, withHooks, withComputed } from '@ngrx/signals';
+import {
+  signalStore,
+  withState,
+  withMethods,
+  patchState,
+  withComputed,
+  withHooks,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { Injectable, Inject, PLATFORM_ID, inject, computed } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs/operators';
-import { pipe, switchMap, tap, catchError, of } from 'rxjs';
-import { DataObject } from '../../type/filter/filter';
-import { DataObjectUpdate, updateProduct } from '../../data/updateModels/product/product';
+import { map, pipe, switchMap, tap, catchError, of } from 'rxjs';
+import { environment } from '../../../../environments/environment';
+
+export interface Product {
+  id: number;
+  key?: string;
+  name: string;
+  description: string;
+  releaseDate: string;
+  brand: string;
+  price: number;
+  quantity: number;
+  status: number;
+  img: string | null;
+}
+
 type ProductState = {
-  products: DataObject[];
+  products: Product[];
   loading: boolean;
   loaded: boolean;
   error: any;
 };
+
 const initialState: ProductState = {
   products: [],
   loading: false,
   loaded: false,
   error: null,
 };
-const API_URL = 'http://localhost:3000/products';
+
+const API_URL = environment.apiUrl + '/Product';
 
 export const ProductStore = signalStore(
   { providedIn: 'root' },
-
   withState(initialState),
-
   withMethods((store, http = inject(HttpClient)) => ({
     loadProducts: rxMethod<void>(
       pipe(
+        tap(() => patchState(store, { loading: true })),
         switchMap(() =>
-          http.get<any[]>(API_URL).pipe(
-            map((raw) => transformRawToProducts(raw)),
-            tap((products) => patchState(store, { products, loaded: true, loading: false })),
+          http.get<Product[]>(`${API_URL}/ProductList`).pipe(
+            map((products) => products || []),
+            tap((products) =>
+              patchState(store, {
+                products,
+                loaded: true,
+                loading: false,
+              })
+            ),
             catchError((error) => {
-              console.error('Load from server failed, trying fallback:', error);
-              return http.get<{ products: any[] }>('/data.json').pipe(
-                map((data) => transformRawToProducts(data.products || [])),
-                tap((products) => patchState(store, { products, loaded: true, loading: false })),
-                catchError((fallbackError) => {
-                  console.error('Fallback failed:', fallbackError);
-                  patchState(store, { error: fallbackError, loaded: true, loading: false });
-                  return of([]);
-                })
-              );
+              console.error('Load products failed:', error);
+              patchState(store, {
+                error,
+                loaded: true,
+                loading: false,
+              });
+              return of([]);
             })
           )
-        ),
-        tap(() => patchState(store, { loading: true }))
+        )
       )
     ),
-    createProduct: rxMethod<updateProduct>(
+
+    createProduct: rxMethod<Product>(
       pipe(
-        switchMap((newProduct) => {
-          const payload = buildCreatePayload(newProduct);
-          return http.post<DataObject>(API_URL, payload).pipe(
-            tap((createdProduct) => {
-              const transformed = transformRawToProducts([createdProduct])[0];
+        switchMap((newProduct) =>
+          http.post<Product>(API_URL, newProduct).pipe(
+            tap((created) => {
               patchState(store, (state) => ({
-                products: [...state.products, transformed],
+                products: [...state.products, created],
               }));
             })
-          );
-        })
+          )
+        )
       )
     ),
-    updateProduct: rxMethod<{ serverId: number | string; update: updateProduct }>(
+    updateProduct: rxMethod<{ id: number; update: Partial<Product> }>(
       pipe(
-        switchMap(({ serverId, update }) => {
-          const currentProducts = store.products();
-          const currentProduct = currentProducts.find((p) => p.id === serverId);
-          const currentReleaseDate = currentProduct?.properties?.find(
-            (p) => p.label === 'releaseDate'
-          )?.value;
-
-          const payload = buildUpdatePayload(serverId, update, currentReleaseDate);
-
-          return http.put<DataObject>(`${API_URL}/${serverId}`, payload).pipe(
-            tap((updatedProduct) => {
-              const transformed = transformRawToProducts([updatedProduct])[0];
+        switchMap(({ id, update }) =>
+          http.put<Product>(`${API_URL}/${id}`, update).pipe(
+            tap((updated) => {
               patchState(store, (state) => ({
-                products: state.products.map((p) => (p.id === serverId ? transformed : p)),
+                products: state.products.map((p) => (p.id === id ? { ...p, ...updated } : p)),
               }));
             })
-          );
-        })
+          )
+        )
       )
     ),
+
     clearError: () => patchState(store, { error: null }),
   })),
   withComputed(({ products }) => ({
     uniqueBrands: computed(() => {
       const brands = new Set<string>();
-      products().forEach((product) => {
-        const brand = getPropertyValue(product.properties || [], 'brand');
-        if (brand) brands.add(String(brand));
+      products().forEach((p) => {
+        if (p.brand) brands.add(p.brand);
       });
       return Array.from(brands).sort();
     }),
 
     priceRange: computed(() => {
-      let min = Number.MAX_VALUE;
-      let max = 0;
-      products().forEach((product) => {
-        const price = Number(getPropertyValue(product.properties || [], 'price'));
-        if (!isNaN(price)) {
-          min = Math.min(min, price);
-          max = Math.max(max, price);
-        }
-      });
-      return { min: min === Number.MAX_VALUE ? 0 : min, max: max === 0 ? 0 : max };
+      const prices = products()
+        .map((p) => p.price)
+        .filter((price) => typeof price === 'number' && !isNaN(price));
+
+      if (prices.length === 0) return { min: 0, max: 0 };
+
+      return {
+        min: Math.min(...prices),
+        max: Math.max(...prices),
+      };
     }),
 
     dateRange: computed(() => {
-      let min = new Date();
-      let max = new Date('1900-01-01');
-      let hasValidDate = false;
+      const dates = products()
+        .map((p) => (p.releaseDate ? new Date(p.releaseDate) : null))
+        .filter((d): d is Date => d !== null && !isNaN(d.getTime()));
 
-      products().forEach((product) => {
-        const dateStr = getPropertyValue(product.properties || [], 'releaseDate');
-        if (dateStr) {
-          const dateObj = new Date(dateStr);
-          if (!isNaN(dateObj.getTime())) {
-            hasValidDate = true;
-            if (dateObj < min) min = dateObj;
-            if (dateObj > max) max = dateObj;
-          }
-        }
-      });
+      if (dates.length === 0) {
+        return { min: new Date(), max: new Date() };
+      }
 
-      if (!hasValidDate) return { min: new Date(), max: new Date() };
-      return { min, max };
+      return {
+        min: new Date(Math.min(...dates.map((d) => d.getTime()))),
+        max: new Date(Math.max(...dates.map((d) => d.getTime()))),
+      };
     }),
   })),
-  withHooks(
-    {
+
+  withHooks({
     onInit(store) {
       store.loadProducts();
     },
-  }
-  )
+  })
 );
-function transformRawToProducts(raw: any[]): DataObject[] {
-  return raw.map((product) => ({
-    key: product.key,
-    id: product.id,
-    label: getPropertyValue(product.properties, 'name') || `Product ${product.key}`,
-    properties: product.properties || [],
-  }));
-}
 
-function getPropertyValue(properties: Array<{ label: string; value: any }>, label: string): any {
-  return properties?.find((p) => p.label === label)?.value ?? null;
+// ────────────────────────────────────────────────
+// Helper functions (không còn cần transform phức tạp)
+// ────────────────────────────────────────────────
+export function getProductImageUrl(product: Product): string {
+  return product.img || '/assets/images/no-image.png'; // fallback nếu cần
 }
-
-function buildCreatePayload(newProduct: updateProduct): any {
-  return {
-    key: Date.now(),
-    properties: [
-      { label: 'name', value: newProduct.name },
-      { label: 'price', value: newProduct.price },
-      {
-        label: 'releaseDate',
-        value: newProduct.releaseDate || new Date().toISOString().split('T')[0],
-      },
-      { label: 'brand', value: newProduct.brand },
-      { label: 'imageUrl', value: newProduct.imageUrl || newProduct.imageLocate || '' },
-      { label: 'description', value: newProduct.description || '' },
-      { label: 'quantity', value: newProduct.quantity },
-      { label: 'status', value: newProduct.status !== undefined ? Number(newProduct.status) : 1 },
-    ],
-  };
-}
-
-function buildUpdatePayload(id: number | string, product: updateProduct, releaseDate?: any): any {
-  return {
-    id,
-    key: id,
-    properties: [
-      { label: 'name', value: product.name },
-      { label: 'price', value: product.price },
-      { label: 'releaseDate', value: releaseDate || new Date().toISOString().split('T')[0] },
-      { label: 'brand', value: product.brand },
-      { label: 'imageUrl', value: product.imageUrl || product.imageLocate || '' },
-      { label: 'description', value: product.description || '' },
-      { label: 'quantity', value: product.quantity },
-      { label: 'status', value: product.status !== undefined ? Number(product.status) : 1 },
-    ],
-  };
-}
-

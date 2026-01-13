@@ -10,11 +10,11 @@
           <h2>Chi Tiết Giỏ Hàng ({{ cartData.items.length }} sản phẩm)</h2>
           <div class="cart-items">
             <div class="cart-item" *ngFor="let item of cartData.items">
-            <div class="item-image" *ngIf="getProductById(item.productId)">
-              <img [src]="getPropertyValue(getProductById(item.productId)!, 'imageUrl')" [alt]="getProductById(item.productId)?.label" />
+            <div class="item-image" *ngIf="getProduct(item.productId)">
+              <img [src]="getProduct(item.productId)?.img" [alt]="getProduct(item.productId)?.name" />
             </div>
             <div class="item-info">
-              <h3>{{ getProductById(item.productId)?.label }}</h3>
+              <h3>{{ getProduct(item.productId)?.name }}</h3>
               <p class="item-price">{{ item.price | formatPrice }}</p>
               <div class="quantity-control">
                 <button class="qty-btn" (click)="decreaseQuantity(item)">−</button>
@@ -37,12 +37,12 @@
         <div class="summary-content">
           <div class="summary-row">
             <span>Số lượng:</span>
-            <span>{{ getTotalQuantity() }} sản phẩm</span>
+            <span>{{ totalQuantity() }} sản phẩm</span>
           </div>
           <div class="summary-divider"></div>
           <div class="summary-row total">
             <span>Tổng tiền:</span>
-            <span class="total-amount">{{ getTotalPrice() | formatPrice }}</span>
+            <span class="total-amount">{{ totalPrice() | formatPrice }}</span>
           </div>
           <button class="checkout-btn" (click)="checkout()">Tiến Hành Thanh Toán</button>
           <a routerLink="/products" class="btn-continue-shopping">Tiếp Tục Mua Sắm</a>

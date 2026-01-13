@@ -21,7 +21,8 @@ export interface updateProduct
     quantity : number,
     status: number,
     description?: string,
-    releaseDate?: string
+    releaseDate?: string,
+    img?: string | null
 }
 export interface DataObject {
   key: string| number;

@@ -15,4 +15,5 @@ export interface updateProduct
     status: number,
     description?: string,
     releaseDate?: string
+    img?: string
 }

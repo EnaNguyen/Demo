@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthorizeContext } from '../../../shared/pipe/contexts/authorizeContext';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -14,11 +14,14 @@ export class Login implements OnInit {
   isLogin = true;
   loginForm!: FormGroup;
   registerForm!: FormGroup;
+  show2FA = false;
+  otp = '';
 
   constructor(private fb: FormBuilder, private authorizeContext: AuthorizeContext) {}
 
   ngOnInit(): void {
     this.initializeForms();
+    this.show2FA = sessionStorage.getItem('show2FA') === 'true';
   }
   initializeForms(): void {
     this.loginForm = this.fb.group({
@@ -59,6 +62,20 @@ export class Login implements OnInit {
   onRegisterSubmit(): void {
     if (this.registerForm.valid) {
       this.authorizeContext.RegisterProcess(this.registerForm.value as any);
+    }
+  }
+
+  verifyOTP(): void {
+    if (this.otp.trim()) {
+      this.authorizeContext.VerifyOTP(this.otp);
+    }
+  }
+
+  resendOTP(): void {
+    const username = sessionStorage.getItem('pendingUsername');
+    if (username) {
+      this.authorizeContext.ResendOTP(username);
+      this.otp = ''; 
     }
   }
 }

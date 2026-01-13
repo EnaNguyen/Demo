@@ -1,6 +1,13 @@
-import { signalStore, withState, withMethods, patchState, withHooks, withComputed } from '@ngrx/signals';
+import {
+  signalStore,
+  withState,
+  withMethods,
+  patchState,
+  withHooks,
+  withComputed,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
@@ -9,20 +16,32 @@ import { map, tap } from 'rxjs/operators';
 import { LoginUserInput, RegisterUserInput } from '../../type/users/user';
 import * as CryptoJS from 'crypto-js';
 import { sign } from 'node:crypto';
+import { environment } from '../../../../environments/environment';
+interface LoginResponse {
+  responseCode: number;
+  result: string;
+  errorMessage: string | null;
+  data: {
+    accessToken?: string;
+    refreshToken?: string;
+    username?: string;
+    role?: string;
+    requires2FA?: boolean;
+    message?: string;
+  };
+}
 @Injectable({
   providedIn: 'root',
 })
 export class AuthorizeContext {
-  private readonly STORAGE_KEY = 'users' ;
-  private readonly TOKEN_KEY = 'Token';
-  private readonly TOKEN_EXPIRY_KEY = 'TokenExpiry';
-  private readonly REFRESH_TOKEN_KEY = 'RefreshToken';
-  private readonly REFRESH_TOKEN_EXPIRY_KEY = 'RefreshTokenExpiry';
-  private readonly API_URL = 'http://localhost:3000/users';
+  private readonly STORAGE_KEY = 'username';
+  private readonly TOKEN_KEY = 'accessToken';
+  private readonly REFRESH_TOKEN_KEY = 'refreshToken';
+  private readonly API_URL = environment.apiUrl + '/Authentication';
   private refreshTokenTimer: any;
   private tokenRefreshTimer: any;
-
-    constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
+  private router = inject(Router);
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
     this.initializeTokenValidation();
   }
   private initializeTokenValidation(): void {
@@ -32,75 +51,104 @@ export class AuthorizeContext {
     this.validateAndRefreshToken();
     setInterval(() => {
       this.validateAndRefreshToken();
-    }, 5 * 60 * 1000); 
+    }, 5 * 60 * 1000);
   }
   private validateAndRefreshToken(): void {
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return;
     }
     const token = localStorage.getItem(this.TOKEN_KEY);
-    const tokenExpiry = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
-    if (token && tokenExpiry) {
-      const expiryTime = parseInt(tokenExpiry, 10);
-      if (Date.now() <= expiryTime) {
-        console.log('Token is valid');
-        return;
-      }
+    if (token) {
+      console.log('Token is valid');
+      return;
     }
     console.log('Token not found or expired. Checking RefreshToken...');
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    const refreshTokenExpiry = localStorage.getItem(this.REFRESH_TOKEN_EXPIRY_KEY);
-
-    if (refreshToken && refreshTokenExpiry) {
-      const expiryTime = parseInt(refreshTokenExpiry, 10);
-      if (Date.now() <= expiryTime) {
-        console.log('RefreshToken is valid. Creating new Token...');
-        this.TokenProcess(refreshToken);
-      } else {
-        console.error('RefreshToken expired. Please login again.');
-        localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-        localStorage.removeItem(this.REFRESH_TOKEN_EXPIRY_KEY);
-        localStorage.removeItem(this.TOKEN_KEY);
-        localStorage.removeItem(this.TOKEN_EXPIRY_KEY);
-        alert('Your session has expired. Please login again.');
-      }
-    } else {
+    if (!refreshToken) {
       console.warn('No RefreshToken found. User not logged in.');
     }
   }
-  LoginProcess(loginUserInput:LoginUserInput) {
-    const hashedPassword = CryptoJS.SHA256(loginUserInput.password).toString();   
-    this.http.get<any[]>(this.API_URL).subscribe({
-      next: (users) => {
-        const matchedUser = users.find(user => 
-          (user.username === loginUserInput.username || user.email === loginUserInput.username) && 
-          user.password === hashedPassword
-        );
+  LoginProcess(credentials: { username: string; password: string }): void {
+    const loginUrl = `${this.API_URL}/login?username=${encodeURIComponent(
+      credentials.username
+    )}&password=${encodeURIComponent(credentials.password)}`;
 
-        if (matchedUser) {
-          console.log('Login successful:', matchedUser);
-          alert(`Login successful! Welcome ${matchedUser.name}`);
-          if (this.platformId && isPlatformBrowser(this.platformId)) {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(matchedUser));
+    this.http.post<LoginResponse>(loginUrl, {}).subscribe({
+      next: (response) => {
+        if (response.responseCode === 200) {
+          if (response.data.requires2FA) {
+            sessionStorage.setItem('pendingUsername', credentials.username);
+            sessionStorage.setItem('show2FA', 'true');
+            window.location.reload();
+            console.log('2FA required - OTP sent to email');
+          } else if (response.data.accessToken && response.data.refreshToken) {
+            localStorage.setItem('accessToken', response.data.accessToken);
+            localStorage.setItem('refreshToken', response.data.refreshToken);
+            localStorage.setItem('username', response.data.username || '');
+            localStorage.setItem('role', response.data.role || '');
+            console.log('Login successfully:', response.result);
+            this.router.navigate(['/']);
           }
-          this.RefreshTokenProcess(matchedUser.username);
-        } else {
-          console.error('Login failed: Invalid username/email or password');
-          alert('Login failed: Invalid username/email or password');
         }
       },
-      error: (err) => {
-        console.error('Failed to fetch users:', err);
-        alert('Failed to connect to server');
-      }
+      error: (error) => {
+        console.error('Login failed:', error);
+      },
     });
   }
-  RegisterProcess(registerUserInput:RegisterUserInput) {
+
+  VerifyOTP(otp: string): void {
+    const username = sessionStorage.getItem('pendingUsername');
+    const verifyUrl = `${this.API_URL}/verify-otp?username=${encodeURIComponent(
+      username || ''
+    )}&otp=${encodeURIComponent(otp)}`;
+
+    this.http.post<LoginResponse>(verifyUrl, {}).subscribe({
+      next: (response) => {
+        if (response.responseCode === 200 && response.data.accessToken) {
+          localStorage.setItem('accessToken', response.data.accessToken);
+          localStorage.setItem('refreshToken', response.data.refreshToken || '');
+          localStorage.setItem('username', response.data.username || '');
+          localStorage.setItem('role', response.data.role || '');
+          sessionStorage.removeItem('pendingUsername');
+          sessionStorage.removeItem('show2FA');
+          console.log('2FA verification successful');
+          this.router.navigate(['/']);
+        } else {
+          alert('Mã OTP không hợp lệ');
+        }
+      },
+      error: (error) => {
+        console.error('OTP verification failed:', error);
+        alert('Xác thực OTP thất bại');
+      },
+    });
+  }
+
+  ResendOTP(username: string): void {
+    const resendUrl = `${this.API_URL}/resend-otp?username=${encodeURIComponent(username)}`;
+
+    this.http.post<LoginResponse>(resendUrl, {}).subscribe({
+      next: (response) => {
+        if (response.responseCode === 200) {
+          alert('Mã OTP mới đã được gửi đến email của bạn');
+          console.log('OTP resent successfully');
+        } else {
+          alert('Gửi lại OTP thất bại');
+        }
+      },
+      error: (error) => {
+        console.error('Resend OTP failed:', error);
+        alert('Lỗi khi gửi lại mã OTP');
+      },
+    });
+  }
+  RegisterProcess(registerUserInput: RegisterUserInput) {
     const hashedPassword = CryptoJS.SHA256(registerUserInput.password).toString();
     this.http.get<any[]>(this.API_URL).subscribe({
       next: (users) => {
-        const isUsernameExists = users.some(user => user.username === registerUserInput.username);
-        const isEmailExists = users.some(user => user.email === registerUserInput.email);
+        const isUsernameExists = users.some((user) => user.username === registerUserInput.username);
+        const isEmailExists = users.some((user) => user.email === registerUserInput.email);
 
         if (isUsernameExists) {
           alert('Username already exists');
@@ -118,8 +166,7 @@ export class AuthorizeContext {
           email: registerUserInput.email,
           password: hashedPassword,
           role: 'customer',
-          id: Date.now()
-        }
+        };
 
         this.http.post(this.API_URL, newUser).subscribe({
           next: () => {
@@ -129,13 +176,13 @@ export class AuthorizeContext {
           error: (err) => {
             console.error('Failed to register user:', err);
             alert('Failed to register user');
-          }
+          },
         });
       },
       error: (err) => {
         console.error('Failed to fetch users:', err);
         alert('Failed to connect to server');
-      }
+      },
     });
   }
   TokenProcess(refreshToken: string) {
@@ -145,11 +192,7 @@ export class AuthorizeContext {
     const newToken = CryptoJS.SHA256(
       refreshToken + Date.now() + Math.random().toString(36).substring(2, 15)
     ).toString();
-    const tokenExpiry = Date.now() + 30 * 60 * 1000; 
-    localStorage.setItem(this.TOKEN_KEY, newToken);
-    localStorage.setItem(this.TOKEN_EXPIRY_KEY, tokenExpiry.toString());
     console.log('New Token created:', newToken);
-    console.log('Token expires at:', new Date(tokenExpiry).toISOString());
     if (this.tokenRefreshTimer) {
       clearInterval(this.tokenRefreshTimer);
     }
@@ -176,11 +219,7 @@ export class AuthorizeContext {
       username + Date.now() + Math.random().toString(36).substring(2, 15)
     ).toString();
     localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
-    const expiryTime = Date.now() + 30 * 24 * 60 * 60 * 1000;
-    localStorage.setItem(this.REFRESH_TOKEN_EXPIRY_KEY, expiryTime.toString());
-
     console.log('RefreshToken created:', refreshToken);
-    console.log('RefreshToken expires at:', new Date(expiryTime).toISOString());
     this.TokenProcess(refreshToken);
     this.setupRefreshTokenTimer();
   }
@@ -195,29 +234,16 @@ export class AuthorizeContext {
 
     this.refreshTokenTimer = setInterval(() => {
       this.checkAndValidateRefreshToken();
-    }, 24 * 60 * 60 * 1000); 
+    }, 24 * 60 * 60 * 1000);
   }
   private checkAndValidateRefreshToken(): void {
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return;
     }
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    const expiryTimeStr = localStorage.getItem(this.REFRESH_TOKEN_EXPIRY_KEY);
 
-    if (!refreshToken || !expiryTimeStr) {
+    if (!refreshToken) {
       return;
-    }
-    const expiryTime = parseInt(expiryTimeStr, 10);
-    const now = Date.now();
-    if (now > expiryTime) {
-      console.warn('RefreshToken expired! Removing from localStorage');
-      localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-      localStorage.removeItem(this.REFRESH_TOKEN_EXPIRY_KEY);
-      alert('Your session has expired. Please login again.');
-    } else {
-      const remainingTime = expiryTime - now;
-      const daysRemaining = Math.floor(remainingTime / (24 * 60 * 60 * 1000));
-      console.log(`RefreshToken is valid. Days remaining: ${daysRemaining}`);
     }
   }
   getToken(): string | null {
@@ -231,43 +257,34 @@ export class AuthorizeContext {
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return false;
     }
-
     const token = localStorage.getItem(this.TOKEN_KEY);
-    const tokenExpiryStr = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
 
-    if (!token || !tokenExpiryStr) {
+    if (!token) {
       return false;
     }
-
-    const expiryTime = parseInt(tokenExpiryStr, 10);
-    return Date.now() <= expiryTime;
+    return true;
   }
   isRefreshTokenValid(): boolean {
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return false;
     }
-
-    const expiryTimeStr = localStorage.getItem(this.REFRESH_TOKEN_EXPIRY_KEY);
-    if (!expiryTimeStr) {
+    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    if (!refreshToken) {
       return false;
     }
-
-    const expiryTime = parseInt(expiryTimeStr, 10);
-    return Date.now() <= expiryTime;
+    return true;
   }
   clearRefreshToken(): void {
     if (this.platformId && isPlatformBrowser(this.platformId)) {
       localStorage.removeItem(this.STORAGE_KEY);
       localStorage.removeItem(this.TOKEN_KEY);
-      localStorage.removeItem(this.TOKEN_EXPIRY_KEY);
       localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-      localStorage.removeItem(this.REFRESH_TOKEN_EXPIRY_KEY);
       if (this.tokenRefreshTimer) {
         clearInterval(this.tokenRefreshTimer);
       }
       if (this.refreshTokenTimer) {
         clearInterval(this.refreshTokenTimer);
-      }     
+      }
       console.log('All tokens cleared');
     }
   }
@@ -287,8 +304,11 @@ export class AuthorizeContext {
       if (!userStr) {
         return null;
       }
-      const user = JSON.parse(userStr);
-      return user.role || null;
+      const userRole = localStorage.getItem('role');
+      if (!userRole) {
+        return null;
+      }
+      return userRole.toLowerCase();
     } catch (error) {
       console.error('Error parsing user data:', error);
       return null;
@@ -303,7 +323,7 @@ export class AuthorizeContext {
       if (!userStr) {
         return null;
       }
-      return JSON.parse(userStr);
+      return userStr;
     } catch (error) {
       console.error('Error parsing user data:', error);
       return null;
@@ -340,7 +360,7 @@ export class AuthorizeContext {
   }
 }
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class RoleGuard implements CanActivate {
   constructor(
@@ -349,16 +369,13 @@ export class RoleGuard implements CanActivate {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  canActivate(
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot
-  ): boolean {
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
     if (!this.platformId || !isPlatformBrowser(this.platformId)) {
       return true;
     }
 
     const isAdminRoute = state.url.startsWith('/admin');
-    
+
     if (isAdminRoute) {
       if (!this.authorizeContext.hasRefreshToken()) {
         console.warn('RefreshToken not found. Redirecting to login...');
@@ -389,4 +406,3 @@ export class RoleGuard implements CanActivate {
     return true;
   }
 }
-

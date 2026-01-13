@@ -147,7 +147,7 @@ export class UpdateProductComponent {
             imageLocate: this.imageType ==='file' ? this.selectedFileName : undefined
         };
         try{
-            this.productStore.updateProduct({ serverId: this.currentProductServerId as string | number, update: updatedProduct });
+            this.productStore.updateProduct({ id: this.currentProductServerId as number, update: updatedProduct });
             this.closeModal();
             console.log('Updated Product:', updatedProduct);
         }
