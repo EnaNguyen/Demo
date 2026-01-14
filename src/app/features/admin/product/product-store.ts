@@ -307,7 +307,7 @@ export const ProductStore = signalStore(
             status: product.status,
             price: product.price,
             quantity: product.quantity,
-            img: product.imageUrl ? product.imageUrl : product.imageLocate,
+            image: product.imageUrl ? product.imageUrl : product.imageLocate,
           };
           console.log('Update Payload:', payload);
           return http.put<DataObject>(`${API_URL}/EditProduct?id=${id}`, payload ).pipe(

@@ -1,9 +1,17 @@
 import { Injectable, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { signalStore, withState, withMethods, withComputed, withHooks, patchState, getState } from '@ngrx/signals';
+import {
+  signalStore,
+  withState,
+  withMethods,
+  withComputed,
+  withHooks,
+  patchState,
+  getState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { switchMap, tap, catchError, of } from 'rxjs';
+import { switchMap, tap, catchError, of, pipe } from 'rxjs';
 import { CartPersonalView, CartDetailPersonalView } from '../../data/viewModels/cartPersonalView';
 import { AddItemToCartModel } from '../../data/createModels/cartAdding';
 import { AuthorizeContext } from './authorizeContext';
@@ -15,7 +23,7 @@ const initialCartState: CartPersonalView = {
   totalPrice: 0,
   userId: 0,
 };
-const API_URL = environment.apiUrl+"/Cart";
+const API_URL = environment.apiUrl + '/Cart';
 
 export const CartStore = signalStore(
   { providedIn: 'root' },
@@ -24,193 +32,232 @@ export const CartStore = signalStore(
     const http = inject(HttpClient);
     const auth = inject(AuthorizeContext);
     const platformId = inject(PLATFORM_ID);
-
-    return {
-      loadCart: rxMethod<string | number>((userId$) =>
-        userId$.pipe(
-          switchMap((userId) =>
-            http.get<any>(`${API_URL}/GetCartList?id=${encodeURIComponent(userId.toString())}`).pipe(
+    const username = auth.getUser() || '';
+    const methods = {
+      loadCart: rxMethod<string>((username) =>
+        username.pipe(
+          switchMap((userId) => {
+            return http.get<any[]>(`${API_URL}/GetCartList?username=${userId}`).pipe(
               tap((response) => {
-                const userCart = response;
-                console.log('Loaded cart data:', userCart);
+                const userCart =
+                  response && Array.isArray(response) && response.length > 0 ? response[0] : null;
                 if (!userCart || !userCart.details) {
-                  const userIdNum = typeof userId === 'string' ? parseInt(userId, 10) : userId;
                   patchState(store, {
                     id: undefined,
-                    userId: userIdNum,
+                    userId: userId,
                     items: [],
                     totalPrice: 0,
                   } as CartPersonalView);
                 } else {
                   const items = userCart.details.map((item: any) => ({
-                    id: item.productId,
-                    detailId: item.id,
-                    cartId: userCart.id,
+                    id: item.id,
                     productId: item.productId,
+                    productName: item.productName,
                     quantity: item.quantity,
                     price: item.price,
+                    cartId: userCart.id,
                   }));
-                  
+
                   patchState(store, {
                     id: userCart.id,
-                    userId: userCart.userId,
+                    userId: userId,
                     items: items,
                     totalPrice: userCart.totalPrice,
                   } as CartPersonalView);
-                  
+
                   if (isPlatformBrowser(platformId)) {
                     localStorage.setItem('carts', JSON.stringify(getState(store)));
                   }
                 }
               }),
               catchError((err) => {
-                console.error('Failed to load cart', err);
                 return of(null);
               })
-            )
-          )
+            );
+          })
         )
       ),
 
-      increaseQuantity(itemId: number): void {
-        const state = getState(store);
-        const user = auth.getUser();
-        const item = state.items?.find((i) => i.id === itemId);
-        
-        if (item && user) {
-          http.put<any>(`${API_URL}/IncreaseAmount?userId=${encodeURIComponent(user.id)}&productId=${item.productId}`, {}).pipe(
+      reloadCart(userId: string): void {
+        http
+          .get<any[]>(`${API_URL}/GetCartList?username=${userId}`)
+          .pipe(
             tap((response) => {
-              if (response && response.details) {
-                const updatedItems = response.details.map((detail: any) => ({
-                  id: detail.productId,
-                  detailId: detail.id,
-                  cartId: response.id,
-                  productId: detail.productId,
-                  quantity: detail.quantity,
-                  price: detail.price,
+              const userCart =
+                response && Array.isArray(response) && response.length > 0 ? response[0] : null;
+              if (userCart && userCart.details && userCart.details.length > 0) {
+                const items = userCart.details.map((item: any) => ({
+                  id: item.id,
+                  productId: item.productId,
+                  productName: item.productName,
+                  quantity: item.quantity,
+                  price: item.price,
+                  cartId: userCart.id,
                 }));
-                
                 patchState(store, {
-                  items: updatedItems,
-                  totalPrice: response.totalPrice,
+                  id: userCart.id,
+                  userId: userId,
+                  items: items,
+                  totalPrice: userCart.totalPrice,
+                } as CartPersonalView);
+              } else {
+                patchState(store, {
+                  id: userCart?.id,
+                  userId: userId,
+                  items: [],
+                  totalPrice: 0,
                 } as CartPersonalView);
               }
             }),
-            catchError((error) => {
-              console.error('Error increasing quantity:', error);
+            catchError((err) => {
               return of(null);
             })
-          ).subscribe();
+          )
+          .subscribe();
+      },
+
+      increaseQuantity(itemId: number): void {
+        const state = getState(store);
+        const username = auth.getUser();
+        const item = state.items?.find((i) => i.id === itemId);
+        if (item && username) {
+          const url = `${API_URL}/IncreaseAmount?username=${username}&productId=${item.productId}`;
+          http
+            .put<any>(url, {})
+            .pipe(
+              tap((response) => {
+                if (response && response.responseCode === 202) {
+                  setTimeout(() => {
+                    methods.reloadCart(username);
+                  }, 100);
+                }
+              }),
+              catchError((error) => {
+                return of(null);
+              })
+            )
+            .subscribe();
         }
       },
 
       decreaseQuantity(itemId: number): void {
         const state = getState(store);
-        const user = auth.getUser();
+        const username = auth.getUser();
         const item = state.items?.find((i) => i.id === itemId);
-        
-        if (item && user) {
-          http.put<any>(`${API_URL}/DecreaseAmount?userId=${encodeURIComponent(user.id)}&productId=${item.productId}`, {}).pipe(
-            tap((response) => {
-              if (response && response.details) {
-                const updatedItems = response.details.map((detail: any) => ({
-                  id: detail.productId,
-                  detailId: detail.id,
-                  cartId: response.id,
-                  productId: detail.productId,
-                  quantity: detail.quantity,
-                  price: detail.price,
-                }));
-                
-                patchState(store, {
-                  items: updatedItems,
-                  totalPrice: response.totalPrice,
-                } as CartPersonalView);
-              }
-            }),
-            catchError((error) => {
-              console.error('Error decreasing quantity:', error);
-              return of(null);
-            })
-          ).subscribe();
+
+        if (item && username) {
+          const url = `${API_URL}/DecreaseAmount?username=${username}&productId=${item.productId}`;
+          http
+            .put<any>(url, {})
+            .pipe(
+              tap((response) => {
+                if (response && response.responseCode === 202) {
+                  setTimeout(() => {
+                    methods.reloadCart(username);
+                  }, 100);
+                }
+              }),
+              catchError((error) => {
+                return of(null);
+              })
+            )
+            .subscribe();
         }
       },
 
       removeItem(itemId: number): void {
         const state = getState(store);
-        const user = auth.getUser();
+        const username = auth.getUser();
         const item = state.items?.find((i) => i.id === itemId);
-        
-        if (item && user) {
-          http.delete<any>(`${API_URL}/RemoveCartItems?userId=${encodeURIComponent(user.id)}&productId=${item.productId}`).pipe(
-            tap((response) => {
-              if (response && response.details) {
-                const updatedItems = response.details.map((detail: any) => ({
-                  id: detail.productId,
-                  detailId: detail.id,
-                  cartId: response.id,
-                  productId: detail.productId,
-                  quantity: detail.quantity,
-                  price: detail.price,
-                }));
-                
-                patchState(store, {
-                  items: updatedItems,
-                  totalPrice: response.totalPrice,
-                } as CartPersonalView);
-              }
-            }),
-            catchError((error) => {
-              console.error('Error deleting cart item:', error);
-              return of(null);
-            })
-          ).subscribe();
+        if (item && username) {
+          const url = `${API_URL}/RemoveCartItems?username=${username}&productId=${item.productId}`;
+          http
+            .delete<any>(url)
+            .pipe(
+              tap((response) => {
+                if (response && response.responseCode === 204) {
+                  setTimeout(() => {
+                    methods.reloadCart(username);
+                  }, 100);
+                }
+              }),
+              catchError((error) => {
+                console.error('Error in removeItem:', error);
+                return of(null);
+              })
+            )
+            .subscribe();
         }
       },
 
       addItemToCart(newItem: AddItemToCartModel): void {
         const user = auth.getUser();
-        
+
         if (user) {
           const productId = newItem.cartDetailId || 0;
           const quantity = newItem.quantity;
-          console.log('Adding item to cart:', { user, productId, quantity });
-          http.post<any>(
-            `${API_URL}/AddItemToCart?username=${encodeURIComponent(user)}&productId=${productId}&quantity=${quantity}`,
-            {}
-          ).pipe(
-            tap((response) => {
-              if (response && response.details) {
-                const updatedItems = response.details.map((detail: any) => ({
-                  id: detail.productId,
-                  detailId: detail.id,
-                  cartId: response.id,
-                  productId: detail.productId,
-                  quantity: detail.quantity,
-                  price: detail.price,
-                }));
-                
-                patchState(store, {
-                  id: response.id,
-                  userId: response.userId,
-                  items: updatedItems,
-                  totalPrice: response.totalPrice,
-                } as CartPersonalView);
-                
-                if (isPlatformBrowser(platformId)) {
-                  localStorage.setItem('carts', JSON.stringify(getState(store)));
-                }             
-                console.log('Item added to cart successfully');
-              }
-            }),
-            catchError((error) => {
-              console.error('Error adding item to cart:', error);
-              return of(null);
-            })
-          ).subscribe();
+          http
+            .post<any[]>(
+              `${API_URL}/AddItemToCart?username=${encodeURIComponent(
+                user
+              )}&productId=${productId}&quantity=${quantity}`,
+              {}
+            )
+            .pipe(
+              tap((response) => {
+                if (response && Array.isArray(response) && response.length > 0) {
+                  const cartData = response[0];
+                  if (cartData.details) {
+                    const updatedItems = cartData.details.map((detail: any) => ({
+                      id: detail.id,
+                      productId: detail.productId,
+                      productName: detail.productName,
+                      quantity: detail.quantity,
+                      price: detail.price,
+                      cartId: cartData.id,
+                    }));
+
+                    patchState(store, {
+                      id: cartData.id,
+                      userId: cartData.userId,
+                      items: updatedItems,
+                      totalPrice: cartData.totalPrice,
+                    } as CartPersonalView);
+
+                    if (isPlatformBrowser(platformId)) {
+                      localStorage.setItem('carts', JSON.stringify(getState(store)));
+                    }
+                  }
+                }
+              }),
+              catchError((error) => {
+                return of(null);
+              })
+            )
+            .subscribe();
         }
       },
+      checkOut: rxMethod<PaymentRequest>(
+        pipe(
+          switchMap((newOrder) => {
+            const CHECKOUT_URL = environment.apiUrl + '/Checkout/process-payment';
+            return http.post<any>(CHECKOUT_URL, newOrder).pipe(
+              tap((response) => {
+                if (response && response.responseCode === 202) {
+                  setTimeout(() => {
+                    methods.reloadCart(username);
+                  }, 100);
+                }
+              }),
+                catchError((error) => {
+                return of(null);
+              })
+            );
+          })
+        )
+      ),
     };
+    return methods;
   }),
   withComputed((store: any) => {
     return {
@@ -230,24 +277,21 @@ export const CartStore = signalStore(
       const auth = inject(AuthorizeContext);
       const platformId = inject(PLATFORM_ID);
       const user = auth.getUser();
-      
-      if (user && user.id) {
+
+      if (user) {
         const storeTyped = store as any;
-        storeTyped.loadCart(user.id);
+        storeTyped.loadCart(user);
       }
-      
+
       if (isPlatformBrowser(platformId)) {
         const checkUserInterval = setInterval(() => {
           const currentUser = auth.getUser();
           const currentState = getState(store);
-          
-          if (currentUser && currentUser.id && currentState.userId !== currentUser.id) {
-            console.log('User changed, reloading cart for user:', currentUser.id);
+
+          if (currentUser && currentState.userId !== currentUser) {
             const storeTyped = store as any;
-            storeTyped.loadCart(currentUser.id);
-          }
-          else if (!currentUser && currentState.userId) {
-            console.log('User logged out, clearing cart');
+            storeTyped.loadCart(currentUser);
+          } else if (!currentUser && currentState.userId) {
             patchState(store, {
               id: undefined,
               userId: 0,
@@ -256,12 +300,10 @@ export const CartStore = signalStore(
             } as CartPersonalView);
           }
         }, 500);
-        
+
         return () => clearInterval(checkUserInterval);
       }
-      
       return undefined;
     },
   })
 );
-

@@ -1,81 +1,65 @@
-import { Component, OnInit, inject, effect, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../shared/pipe/contexts/cartContext';
-import { ProductStore, Product } from '../../../shared/pipe/contexts/productContext';
 import { CartPersonalView, CartDetailPersonalView } from '../../../shared/data/viewModels/cartPersonalView';
 import { FormatPricePipe } from '../../../shared/pipe/format/formatPrice.pipe';
-
+import { ProductStore} from '../../admin/product/product-store';
+import { ProductModel } from '../../admin/product/model/product.model';
+import { AddItemToCartModel } from '../../../shared/data/createModels/cartAdding';
+import { PaymentRequest } from '../../../shared/data/createModels/paymentRequest';
 @Component({
   selector: 'app-cart',
   standalone: true,
   imports: [CommonModule, RouterLink, FormatPricePipe],
   templateUrl: './cart.html',
   styleUrl: './cart.css',
-})
+})   
 export class Cart implements OnInit {
-  cart = signal<CartPersonalView | null>(null);
-  private productStore = inject(ProductStore);
   private cartStore = inject(CartStore);
-  cartItems = computed(() => this.cart()?.items || []);
-  totalPrice = computed(() => this.cart()?.totalPrice || 0);
-  totalQuantity = computed(() => 
-    this.cart()?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
-  );
-
-  private productMap = computed(() => {
-    const map = new Map<number, Product>();
-    this.productStore.products().forEach(p => {
-      map.set(p.id, p);
-    });
-    return map;
+  private readonly productStore = inject(ProductStore);
+  private readonly username = localStorage.getItem('username') || '';
+  cart = computed(() => {
+    return (this.cartStore as any).cartView();
+  });
+  cartItems = computed(() => {
+    return this.cart()?.items || [];
+  });
+  totalPrice = computed(() => {
+    return this.cart()?.totalPrice || 0;
+  });
+  totalQuantity = computed(() => {
+    return this.cart()?.items?.reduce((sum: number, item: CartDetailPersonalView) => sum + item.quantity, 0) || 0;
   });
 
-  constructor() {
-    effect(() => {
-      const cartView = (this.cartStore as any)['cartView']();
-      this.cart.set(cartView);
-    });
-  }
-
   ngOnInit(): void {
-    this.productStore.loadProducts();
-  }
-
-  getProduct(productId: number): Product | undefined {
-    return this.productMap().get(productId);
+    if (this.username) {
+      this.cartStore.loadCart(this.username);
+      this.productStore.loadProducts('');
+    }
   }
 
   getProductName(item: CartDetailPersonalView): string {
-    return this.getProduct(item.productId)?.name || 'Sản phẩm không xác định';
+    return item.productName || 'Sản phẩm không xác định';
   }
 
   getProductImage(item: CartDetailPersonalView): string {
-    const product = this.getProduct(item.productId);
-    return product?.img || '/assets/images/no-product.jpg';
+    const products = this.productStore.products();
+    const product = products.find(p => p.id == item.productId.toString());
+    return product?.imageUrl || '/assets/images/no-product.jpg';
   }
 
   getProductPrice(item: CartDetailPersonalView): number {
-    return this.getProduct(item.productId)?.price || item.price || 0;
+    return item.price || 0;
   }
 
   getMaxAvailableForItem(item: CartDetailPersonalView): number {
-    const product = this.getProduct(item.productId);
-    if (!product) return item.quantity; 
-    
-    const stock = product.quantity;
-    return stock;
+    return item.quantity;
   }
 
   increaseQuantity(item: CartDetailPersonalView): void {
-    const maxAvailable = this.getMaxAvailableForItem(item);
-    if (item.quantity >= maxAvailable) {
-      alert(`Chỉ còn ${maxAvailable} sản phẩm trong kho!`);
-      return;
-    }
-    
     const storeTyped = this.cartStore as any;
-    storeTyped.increaseQuantity(item.id, maxAvailable);
+    storeTyped.increaseQuantity(item.id);
   }
 
   decreaseQuantity(item: CartDetailPersonalView): void {
@@ -88,14 +72,17 @@ export class Cart implements OnInit {
     storeTyped.removeItem(item.id);
   }
 
-  checkout(): void {
-    if (!this.cart()?.items?.length) {
-      alert('Giỏ hàng trống!');
-      return;
-    }
-    alert('Tiến hành thanh toán...');
-  }
-  getItemSubtotal(item: CartDetailPersonalView): number {
-    return item.quantity * this.getProductPrice(item);
+  checkout(item: CartPersonalView): void {
+    const request : PaymentRequest =
+    {
+        CartId : item.id as number,
+        PaymentMethod : "COD",
+        Receiver: this.username,
+        Phone: "0973713274",
+        Address: "63 Trần Khánh Dư",
+        TotalPrice : item.totalPrice
+    } 
+    const storeTyped = this.cartStore as any;
+    storeTyped.CheckOut(request)
   }
 }

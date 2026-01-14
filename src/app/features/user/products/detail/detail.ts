@@ -10,10 +10,9 @@ import { AuthorizeContext } from '../../../../shared/pipe/contexts/authorizeCont
 import { FormatDatePipe } from '../../../../shared/pipe/format/formatDate.pipe';
 import { FormatPricePipe } from '../../../../shared/pipe/format/formatPrice.pipe';
 
-import { Product } from '../../../../shared/pipe/contexts/productContext'; // import interface Product
+import { Product } from '../../../../shared/pipe/contexts/productContext'; 
 import { AddItemToCartModel } from '../../../../shared/data/createModels/cartAdding';
 import { CartDetailPersonalView } from '../../../../shared/data/viewModels/cartPersonalView';
-
 @Component({
   selector: 'app-detail',
   standalone: true,
@@ -36,7 +35,8 @@ export class DetailComponent {
     const prod = this.product();
     if (!prod) return 0;
 
-    const cartView = (this.cartStore as any)['cartView']() as any;
+    const cartView = this.cartStore.loadCart(localStorage.getItem('username') || '') as any;
+    console.log(cartView);
     if (!cartView?.items) return prod.quantity;
 
     const cartItem = cartView.items.find(

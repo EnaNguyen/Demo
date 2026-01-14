@@ -71,7 +71,6 @@ export const ProductStore = signalStore(
         )
       )
     ),
-
     createProduct: rxMethod<Product>(
       pipe(
         switchMap((newProduct) =>
@@ -98,7 +97,6 @@ export const ProductStore = signalStore(
         )
       )
     ),
-
     clearError: () => patchState(store, { error: null }),
   })),
   withComputed(({ products }) => ({
@@ -145,10 +143,6 @@ export const ProductStore = signalStore(
     },
   })
 );
-
-// ────────────────────────────────────────────────
-// Helper functions (không còn cần transform phức tạp)
-// ────────────────────────────────────────────────
 export function getProductImageUrl(product: Product): string {
-  return product.img || '/assets/images/no-image.png'; // fallback nếu cần
+  return product.img || ''
 }
