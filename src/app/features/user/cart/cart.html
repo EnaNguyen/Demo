@@ -44,7 +44,7 @@
             <span>Tổng tiền:</span>
             <span class="total-amount">{{ totalPrice() | formatPrice }}</span>
           </div>
-          <button class="checkout-btn" (click)="checkout(cart())">Tiến Hành Thanh Toán</button>
+          <button class="checkout-btn" (click)="checkOut(cart())">Tiến Hành Thanh Toán</button>
           <a routerLink="/products" class="btn-continue-shopping">Tiếp Tục Mua Sắm</a>
         </div>
       </div>

@@ -1,0 +1,65 @@
+<div class="modal-header border-bottom">
+  <h5 class="modal-title fw-bold">Thông Tin Giao Hàng</h5>
+  <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+
+<div class="modal-body">
+  <hr class="my-3" />
+  <div class="form-section">
+    <label class="section-label fw-bold mb-3">Người Nhận</label>
+    <form class="delivery-form">
+      <div class="mb-3">
+        <label for="receiverName" class="form-label">Tên Người Nhận</label>
+        <input 
+          type="text" 
+          class="form-control form-control-lg" 
+          id="receiverName"
+          [(ngModel)]="receiverName"
+          name="receiverName"
+          placeholder="Nhập tên người nhận"
+          required
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="phone" class="form-label">Số Điện Thoại</label>
+        <input 
+          type="tel" 
+          class="form-control form-control-lg" 
+          id="phone"
+          [(ngModel)]="phone"
+          name="phone"
+          placeholder="Nhập số điện thoại"
+          required
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="address" class="form-label">Địa Chỉ</label>
+        <textarea 
+          class="form-control form-control-lg" 
+          id="address"
+          [(ngModel)]="address"
+          name="address"
+          rows="4"
+          placeholder="Nhập địa chỉ giao hàng"
+          required
+        ></textarea>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-footer border-top pt-4">
+  <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">
+    Hủy
+  </button>
+  <div class="payment-buttons">
+    <button type="button" class="btn btn-cod" (click)='submitCheckout("COD")'>
+      Thanh Toán COD
+    </button>
+    <button type="button" class="btn btn-vnpay" (click)='submitCheckout("VNPay")'>
+      Thanh Toán VNPay
+    </button>
+  </div>
+</div>

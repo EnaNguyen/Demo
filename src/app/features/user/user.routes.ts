@@ -23,8 +23,8 @@ export const USER_ROUTES: Routes = [
     loadComponent: () => import('./cart/cart').then(m => m.Cart)
   },
   {
-    path: 'checkout',
-    loadComponent: () => import('./checkout/checkout').then(m => m.Checkout)
+    path: 'PaymentSuccess',
+    loadComponent: () => import('./PaymentSuccess/PaymentSuccess').then(m => m.PaymentSuccess)
   },
 ];
 export const USER_LOGIN : Routes = [

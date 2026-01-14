@@ -9,16 +9,11 @@ import {
   withHooks,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { tapResponse } from '@ngrx/operators';
 import { ProductModel } from '../product/model/product.model';
 import { ProductService } from './services/product.service';
 import { updateProduct } from '../product/model/product.model';
 import { HttpClient } from '@angular/common/http';
 import { DataObject } from './model/product.model';
-import { Data } from '@angular/router';
-import { access } from 'fs';
-import { Store } from '@ngrx/store';
-import { compileFunction } from 'vm';
 import { environment } from '../../../../environments/environment.development';
 type FilterState = {
   name: string;
@@ -197,7 +192,7 @@ export const ProductStore = signalStore(
         tap(() => patchState(store, { isLoading: true })),
         switchMap((query) => {
           return productService.searchBooks(query).pipe(
-            tapResponse(
+            tap(
               (products) => {
                 patchState(store, { products, isLoading: false });
               },
@@ -280,7 +275,7 @@ export const ProductStore = signalStore(
           console.log('Create Payload:', mappingData);
           const createUrl = `${API_URL}/AddNewProduct`;
           return http.post<DataObject>(createUrl, mappingData).pipe(
-            tapResponse(
+            tap(
               (createdProduct) => {
                 console.log('Created Product:', createdProduct);
                 const newProductModel: ProductModel =
@@ -311,7 +306,7 @@ export const ProductStore = signalStore(
           };
           console.log('Update Payload:', payload);
           return http.put<DataObject>(`${API_URL}/EditProduct?id=${id}`, payload ).pipe(
-            tapResponse(
+            tap(
               (updatedProduct) => {
                 const transformed = productService.transformRawToProducts([updatedProduct])[0];
                 patchState(store, (state) => ({

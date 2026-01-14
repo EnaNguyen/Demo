@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { CartStore } from '../../../shared/pipe/contexts/cartContext';
 import { CartPersonalView, CartDetailPersonalView } from '../../../shared/data/viewModels/cartPersonalView';
 import { FormatPricePipe } from '../../../shared/pipe/format/formatPrice.pipe';
@@ -8,16 +9,18 @@ import { ProductStore} from '../../admin/product/product-store';
 import { ProductModel } from '../../admin/product/model/product.model';
 import { AddItemToCartModel } from '../../../shared/data/createModels/cartAdding';
 import { PaymentRequest } from '../../../shared/data/createModels/paymentRequest';
+import { CheckoutModalComponent } from './checkout-modal';
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormatPricePipe],
+  imports: [CommonModule, RouterLink, FormatPricePipe, CheckoutModalComponent],
   templateUrl: './cart.html',
   styleUrl: './cart.css',
 })   
 export class Cart implements OnInit {
   private cartStore = inject(CartStore);
   private readonly productStore = inject(ProductStore);
+  private readonly modalService = inject(NgbModal);
   private readonly username = localStorage.getItem('username') || '';
   cart = computed(() => {
     return (this.cartStore as any).cartView();
@@ -72,17 +75,31 @@ export class Cart implements OnInit {
     storeTyped.removeItem(item.id);
   }
 
-  checkout(item: CartPersonalView): void {
-    const request : PaymentRequest =
-    {
-        CartId : item.id as number,
-        PaymentMethod : "COD",
-        Receiver: this.username,
-        Phone: "0973713274",
-        Address: "63 Trần Khánh Dư",
-        TotalPrice : item.totalPrice
-    } 
-    const storeTyped = this.cartStore as any;
-    storeTyped.CheckOut(request)
+  checkOut(item: CartPersonalView): void {
+    const modalRef = this.modalService.open(CheckoutModalComponent, {
+      size: 'lg',
+      backdrop: 'static',
+      keyboard: false,
+    });
+    const componentInstance = modalRef.componentInstance as CheckoutModalComponent;
+    componentInstance.setModalRef(modalRef);
+    modalRef.result.then(
+      (formData) => {
+        const request: PaymentRequest = {
+          CartId: item.id as number,
+          PaymentMethod: formData.method,
+          Receiver: formData.receiverName,
+          Phone: formData.phone,
+          Address: formData.address,
+          TotalPrice: item.totalPrice,
+        };
+        console.log('Checkout request:', request);
+        const storeTyped = this.cartStore as any;
+        storeTyped.checkOut(request);
+      },
+      (reason) => {
+        console.log('Checkout modal dismissed:', reason);
+      }
+    );
   }
 }

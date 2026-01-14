@@ -1,0 +1,40 @@
+<div class="payment-success-container">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+    </div>
+    
+    <h1 class="success-title">Thanh toán thành công!</h1>
+    
+    <p class="success-message">
+      Cảm ơn bạn đã thanh toán. Đơn hàng của bạn đã được xác nhận.
+    </p>
+    
+    <div class="transaction-info">
+      <div class="info-row">
+        <span class="info-label">Mã đơn hàng:</span>
+        <span class="info-value">#{{ orderId }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Mã giao dịch:</span>
+        <span class="info-value">{{ transactionId }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Trạng thái:</span>
+        <span class="info-value status-success">{{ status }}</span>
+      </div>
+    </div>
+    
+    <div class="countdown-section">
+      <p class="countdown-text">
+        Trang sẽ tự động đóng sau <span class="countdown-number">{{ countdown }}</span> giây
+      </p>
+      <button class="close-button" (click)="closeWindow()">
+        Đóng ngay
+      </button>
+    </div>
+  </div>
+</div>

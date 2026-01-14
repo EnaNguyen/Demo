@@ -24,7 +24,13 @@ const initialCartState: CartPersonalView = {
   userId: 0,
 };
 const API_URL = environment.apiUrl + '/Cart';
-
+interface CheckoutResponse {
+  success: boolean;
+  transactionId: string | null;
+  totalPrice: number;
+  message: string;
+  orderId: string | null;
+}
 export const CartStore = signalStore(
   { providedIn: 'root' },
   withState(initialCartState),
@@ -241,15 +247,41 @@ export const CartStore = signalStore(
         pipe(
           switchMap((newOrder) => {
             const CHECKOUT_URL = environment.apiUrl + '/Checkout/process-payment';
-            return http.post<any>(CHECKOUT_URL, newOrder).pipe(
+            return http.post<CheckoutResponse>(CHECKOUT_URL, newOrder).pipe(
               tap((response) => {
-                if (response && response.responseCode === 202) {
-                  setTimeout(() => {
-                    methods.reloadCart(username);
-                  }, 100);
+                if (response?.success && response.message && response.transactionId != null) {
+                  window.location.href = response.message;
+                } else if (
+                  response?.success &&
+                  response.message &&
+                  response.transactionId == null
+                ) {
+                  alert('Đã đặt hàng theo hình thức COD thành công ( thanh toán khi nhận hàng ) ');
+                  window.location.reload();
+                } else {
+                  alert('Đã xảy ra lỗi');
+                  window.location.reload();
                 }
+                console.log();
               }),
-                catchError((error) => {
+              catchError((error) => {
+                console.error('Checkout error:', error);
+                return of(null);
+              })
+            );
+          })
+        )
+      ),
+      paidSuccessUpdate: rxMethod<string>(
+        pipe(
+          switchMap((orderId) => {
+            const UpdatePaidStatus = API_URL + `/Order/AcceptOrder?id=${orderId}`;
+            return http.put(API_URL, orderId).pipe(
+              tap((response) => {
+                console.warn('update order status' + orderId + ' successfully' + response);
+              }),
+              catchError((error) => {
+                console.error('Checkout error:', error);
                 return of(null);
               })
             );

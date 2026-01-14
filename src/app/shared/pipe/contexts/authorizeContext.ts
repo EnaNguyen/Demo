@@ -30,6 +30,13 @@ interface LoginResponse {
     message?: string;
   };
 }
+interface ResponseCode 
+{
+    data: any,
+    errorMessage: string,
+    responseCode: number,
+    result: string
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -86,7 +93,7 @@ export class AuthorizeContext {
             localStorage.setItem('refreshToken', response.data.refreshToken);
             localStorage.setItem('username', response.data.username || '');
             localStorage.setItem('role', response.data.role || '');
-            console.log('Login successfully:', response.result);
+            alert('Login successfully');
             this.router.navigate(['/']);
           }
         }
@@ -113,6 +120,7 @@ export class AuthorizeContext {
           sessionStorage.removeItem('pendingUsername');
           sessionStorage.removeItem('show2FA');
           console.log('2FA verification successful');
+          alert("Welcome back"+ response.data.username)
           this.router.navigate(['/']);
         } else {
           alert('Mã OTP không hợp lệ');
@@ -126,9 +134,9 @@ export class AuthorizeContext {
   }
 
   ResendOTP(username: string): void {
-    const resendUrl = `${this.API_URL}/resend-otp?username=${encodeURIComponent(username)}`;
+    const resendUrl = `${this.API_URL}/ResentOtp?username=${username}`;
 
-    this.http.post<LoginResponse>(resendUrl, {}).subscribe({
+    this.http.get<LoginResponse>(resendUrl, {}).subscribe({
       next: (response) => {
         if (response.responseCode === 200) {
           alert('Mã OTP mới đã được gửi đến email của bạn');
@@ -144,44 +152,28 @@ export class AuthorizeContext {
     });
   }
   RegisterProcess(registerUserInput: RegisterUserInput) {
-    const hashedPassword = CryptoJS.SHA256(registerUserInput.password).toString();
-    this.http.get<any[]>(this.API_URL).subscribe({
-      next: (users) => {
-        const isUsernameExists = users.some((user) => user.username === registerUserInput.username);
-        const isEmailExists = users.some((user) => user.email === registerUserInput.email);
-
-        if (isUsernameExists) {
-          alert('Username already exists');
-          return;
+    const newUser = {
+      Fullname: registerUserInput.fullName,
+      Username: registerUserInput.username,
+      Password: registerUserInput.password,
+      ReEnterPassword: registerUserInput.confirmPassword,
+      Email: registerUserInput.email,
+      Role: 'Customer',
+    };
+    this.http.post<ResponseCode>(environment.apiUrl + '/User/CreateUser', newUser).subscribe({
+      next: (response) => {
+        console.log(response)
+        if(response.responseCode!=201)
+        {
+          alert("Không thể đăng ký mới. Nguyên nhân: "+ response.errorMessage)
         }
-
-        if (isEmailExists) {
-          alert('Email already exists');
-          return;
-        }
-
-        const newUser = {
-          name: registerUserInput.fullName,
-          username: registerUserInput.username,
-          email: registerUserInput.email,
-          password: hashedPassword,
-          role: 'customer',
-        };
-
-        this.http.post(this.API_URL, newUser).subscribe({
-          next: () => {
-            console.log('Registration successful:', newUser);
-            alert('Registration successful!');
-          },
-          error: (err) => {
-            console.error('Failed to register user:', err);
-            alert('Failed to register user');
-          },
-        });
+        else
+          alert("Đăng ký tài khoản mới thành công")
+          window.location.reload();
       },
       error: (err) => {
-        console.error('Failed to fetch users:', err);
-        alert('Failed to connect to server');
+        console.error('Failed to register user:', err);
+        alert('Failed to register user');
       },
     });
   }

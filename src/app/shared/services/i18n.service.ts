@@ -1,8 +1,6 @@
-// src/app/services/i18n.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, tap } from 'rxjs';
-
 @Injectable({
   providedIn: 'root',
 })
@@ -15,7 +13,6 @@ export class I18nService {
   constructor(private http: HttpClient) {
     this.loadTranslations(this.currentLang);
   }
-
   getCurrentLanguage(): string {
     return this.currentLang;
   }
@@ -23,13 +20,11 @@ export class I18nService {
     if (lang) {
       this.currentLang = lang;
     } else {
-      // Auto-toggle nếu không truyền language
       this.currentLang = this.currentLang === 'en-translation' ? 'vi-translation' : 'en-translation';
     }
     this.loadTranslations(this.currentLang);
   }
   translate(key: string): string {
-    // Support nested keys like 'footer.contactInfo'
     const keys = key.split('.');
     let value: any = this.translations;
     
@@ -37,13 +32,11 @@ export class I18nService {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
-        return key; // Return key if not found
+        return key; 
       }
-    }
-    
+    }   
     return typeof value === 'string' ? value : key;
   }
-
   private loadTranslations(lang: string) {
     console.log(`Loading translations for ${lang}...`);
     this.http
